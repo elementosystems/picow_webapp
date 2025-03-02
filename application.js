@@ -11,6 +11,7 @@
     const connectDisconnectButton = document.getElementById('connectDisconnect');
     const statusDisplay = document.getElementById('status');
     const gpioControls = document.getElementById('gpioControls');
+    const voltageCurrent = document.getElementById('voltageCurrent'); // Voltage/Current section
     let serialPort;
     let isConnected = false;
 
@@ -21,6 +22,7 @@
           await serialPort.connect();
           statusDisplay.textContent = 'Connected';
           gpioControls.style.display = 'block';
+          voltageCurrent.style.display = 'block'; // Show voltage/current section
           connectDisconnectButton.textContent = 'Disconnect';
           isConnected = true;
         } catch (error) {
@@ -32,6 +34,7 @@
           await serialPort.disconnect();
           statusDisplay.textContent = 'Disconnected';
           gpioControls.style.display = 'none';
+          voltageCurrent.style.display = 'none'; // Hide voltage/current section on disconnect
           connectDisconnectButton.textContent = 'Connect';
           isConnected = false;
           serialPort = null; //important to reset serialPort
