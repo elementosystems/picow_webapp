@@ -8,20 +8,37 @@
   const CMD_OFF = 0x00;
 
   document.addEventListener('DOMContentLoaded', event => {
-    const connectButton = document.getElementById('connect');
+    const connectDisconnectButton = document.getElementById('connectDisconnect');
     const statusDisplay = document.getElementById('status');
     const gpioControls = document.getElementById('gpioControls');
     let serialPort;
+    let isConnected = false;
 
-    connectButton.addEventListener('click', async () => {
-      try {
-        serialPort = await serial.requestPort();
-        await serialPort.connect();
-        statusDisplay.textContent = 'Connected';
-        gpioControls.style.display = 'block';
-      } catch (error) {
-        console.error("Error connecting:", error);
-        statusDisplay.textContent = 'Connection Failed';
+    connectDisconnectButton.addEventListener('click', async () => {
+      if (!isConnected) {
+        try {
+          serialPort = await serial.requestPort();
+          await serialPort.connect();
+          statusDisplay.textContent = 'Connected';
+          gpioControls.style.display = 'block';
+          connectDisconnectButton.textContent = 'Disconnect';
+          isConnected = true;
+        } catch (error) {
+          console.error("Error connecting:", error);
+          statusDisplay.textContent = 'Connection Failed';
+        }
+      } else {
+        try {
+          await serialPort.disconnect();
+          statusDisplay.textContent = 'Disconnected';
+          gpioControls.style.display = 'none';
+          connectDisconnectButton.textContent = 'Connect';
+          isConnected = false;
+          serialPort = null; //important to reset serialPort
+        } catch (error) {
+          console.error("Error disconnecting:", error);
+          statusDisplay.textContent = 'Disconnection Failed';
+        }
       }
     });
 
@@ -53,10 +70,34 @@
       }
     }
 
+    const flashModeToggle = document.getElementById('flashModeToggle');
 
-    document.getElementById('gpio11').addEventListener('change', () => sendCommand('gpio11', document.getElementById('gpio11').checked ? CMD_ON : CMD_OFF));
-    document.getElementById('gpio12').addEventListener('change', () => sendCommand('gpio12', document.getElementById('gpio12').checked ? CMD_ON : CMD_OFF));
-    document.getElementById('gpio13').addEventListener('change', () => sendCommand('gpio13', document.getElementById('gpio13').checked ? CMD_ON : CMD_OFF));
+    flashModeToggle.addEventListener('change', () => {
+      if (flashModeToggle.checked) {
+        // Toggle is on - enable boot loader mode
+        sendCommand('gpio12', CMD_ON);
+        sendCommand('gpio13', CMD_ON);
+      } else {
+        // Toggle is off - set normal flash mode
+        sendCommand('gpio12', CMD_OFF);
+        sendCommand('gpio13', CMD_OFF);
+      }
+    });
+
+    document.getElementById('gpio11').addEventListener('change', () => 
+      sendCommand('gpio11', document.getElementById('gpio11').checked ? CMD_ON : CMD_OFF));
+
+    // Updated slider handling: Toggle checkbox only if not disabled
+    const sliders = document.querySelectorAll('.gpio-slider .slider');
+    sliders.forEach(slider => {
+      slider.addEventListener('click', () => {
+        const checkbox = slider.previousElementSibling;
+        if (checkbox && !checkbox.disabled) { // Only toggle if not disabled
+          checkbox.checked = !checkbox.checked;
+          checkbox.dispatchEvent(new Event('change'));
+        }
+      });
+    });
   });
 })();
 

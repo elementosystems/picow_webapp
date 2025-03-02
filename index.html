@@ -3,51 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pico W WebUSB GPIO Controller</title>
+    <title>Power&Flash Selector</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="application.css">
+    <link rel="stylesheet" href="darkmode.css">
 </head>
 <body>
-    <h1>Pico W WebUSB GPIO Controller</h1>
+    <div id="darkModeContainer">
+        <label for="darkModeToggle">Dark Mode</label>
+        <input type="checkbox" id="darkModeToggle">
+    </div>
 
-    <button id="connect">Connect to Pico W</button>
-    <div id="status">Disconnected</div>
+    <h1>Power Control and Flash Mode Selector</h1>
+
+    <button id="connectDisconnect">Connect</button> <div id="status">Disconnected</div>
 
     <div id="gpioControls" style="display: none;">
-        <h2>GPIO Controls</h2>
-        <div class="gpio-group">
-            <h3>GPIO 11</h3>
-            <label class="switch">
-              <input type="checkbox" id="gpio11">
-              <span class="slider round"></span>
-            </label>
+        <h2>Device Controls</h2>
+        
+        <!-- Power Control Section -->
+        <div id="powerControl">
+            <h3>Power Control</h3>
+            <div class="gpio-slider">
+                <input type="checkbox" id="gpio11" />
+                <label for="gpio11">12V Power</label>
+            </div>
         </div>
-        <div class="gpio-group">
-            <h3>GPIO 12</h3>
-            <label class="switch">
-              <input type="checkbox" id="gpio12">
-              <span class="slider round"></span>
-            </label>
-        </div>
-        <div class="gpio-group">
-            <h3>GPIO 13</h3>
-            <label class="switch">
-              <input type="checkbox" id="gpio13">
-              <span class="slider round"></span>
-            </label>
-        </div>
-    </div>
-    <details>
-        <summary>Advanced</summary>
-        <div id="console">
-            <h2>Console</h2>
-            <div id="sender_lines" class="lines"></div>
-            <div id="receiver_lines" class="lines"></div>
-            <input id="command_line" type="text" placeholder="Type a command...">
-        </div>
-    </details>
 
+        <div id="flashModes">
+            <h3>Flash Mode</h3>
+            <input type="checkbox" id="flashModeToggle">
+            <label for="flashModeToggle">Boot Flash</label>
+          </div>
+    </div>
+
+    <div id="voltageCurrent" style="display: none;">
+        <h3>Voltage &amp; Current</h3>
+        <h4>Coming Soon</h4>
+        <!-- <p>Voltage: <span id="voltageValue">0 V</span></p>
+        <p>Current: <span id="currentValue">0 A</span></p> -->
+    </div>
+
+    <div id="advancedControls">
+        <details>
+            <summary>Advanced</summary>
+            <div id="console">
+                <h2>Console</h2>
+                <div id="sender_lines" class="lines"></div>
+                <div id="receiver_lines" class="lines"></div>
+                <input id="command_line" type="text" placeholder="Type a command...">
+            </div>      
+        </details>
+      </div>
+
+    <footer>
+        <p>&copy; Copyright 2025 BSADASHI</p>
+    </footer>
     <script src="serial.js"></script>
     <script src="application.js"></script>
+    <script src="darkmode.js"></script>
 </body>
 </html>

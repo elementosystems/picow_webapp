@@ -2,33 +2,130 @@ body {
     font-family: sans-serif;
     text-align: center;
     padding: 20px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    background-color: #fff;
+    color: #333;
 }
 
-button {
-    padding: 10px 20px;
-    margin: 5px;
-    background-color: #4CAF50; /* Green */
-    border: none;
-    color: white;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 16px;
-    border-radius: 5px;
-    cursor: pointer;
+body.dark-mode {
+    background-color: #333;
+    color: #eee;
+}
+
+body.dark-mode #gpioControls {
+    background-color: #444;
+    border-color: #666;
+    color: #eee;
+}
+
+body.dark-mode #advancedControls {
+    background-color: #444;
+    border-color: #666;
+    color: #eee;
+}
+
+body.dark-mode #voltageCurrent {
+    background-color: #444;
+    border-color: #666;
+    color: #eee;
+}
+
+body.dark-mode #console {
+    background-color: #444;
+    border-color: #666;
+}
+
+body.dark-mode details {
+    background-color: #444;
+    border-color: #666;
 }
 
 button:hover {
     background-color: #367c39;
 }
 
+button.dark-mode {
+    background-color: #555;
+    color: #eee;
+}
+
+button.dark-mode:hover {
+    background-color: #777;
+}
+
+body.dark-mode footer {
+    background-color: #444;
+    border-color: #666;
+    color: #eee;
+}
+
+
+#gpioControls {
+    display: flex;
+    flex-direction: row;       /* Explicit direction */
+    gap: 20px;                 /* Space between the child boxes */
+    border: 1px solid #ccc;
+    padding: 15px;
+    width: 750px;              /* Container width */
+    margin: 20px 20px 20px 20px;/* Adjust margins as needed */
+    background-color: #f9f9f9;
+}
+
+#powerControl,
+#flashModes {
+    flex: 1;         /* Each takes up equal space */
+    margin: 0 10px;  /* Horizontal spacing between sections */
+    min-width: 280px; /* Prevent sections from being too narrow */
+}
+
+#voltageCurrent {
+    border: 1px solid #ccc;
+    padding: 15px;
+    width: 300px;
+    margin: 20px auto;
+    background-color: #f1f1f1;
+    text-align: center;
+    vertical-align: top;
+}
+
+#advancedControls {
+    position: fixed;
+    bottom: 150px; /* Adjust vertical spacing as needed */
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    border: 1px solid #ccc;
+    padding: 15px;
+    width: 90%;         /* Use relative width */
+    max-width: 300px;   /* Ensure it doesn't grow too wide on large screens */
+    background-color: #f9f9f9;
+}
+
+@media screen and (max-width: 400px) {
+    #advancedControls {
+        padding: 10px;
+        width: 95%;
+    }
+}
+/* GPIO Switch Styles */
 #gpioControls {
     margin-top: 20px;
 }
 
-.gpio-group {
+.switch {
+    display: block; /* or inline-block, depending on your layout */
     margin-bottom: 15px;
 }
+
+#darkModeToggle {
+    margin-right: 5px;
+}
+/* Style for text of the input checkbox label*/
+#darkModeContainer label {
+    margin-right: 10px; /* Add some space between label and checkbox */
+}
+
+/* Styles for other elements */
 
 #status {
     margin-bottom: 20px;
@@ -80,4 +177,29 @@ details {
 details summary {
     cursor: pointer;
     font-weight: bold;
+}
+
+footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    padding: 10px;
+    font-size: 0.8em;
+    background-color: #f0f0f0;
+    border-top: 1px solid #ccc;
+}
+
+#darkModeContainer {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+}
+
+#darkModeContainer label {
+    margin-right: 10px; /* Add some space between label and checkbox */
 }
