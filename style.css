@@ -66,16 +66,22 @@ body.dark-mode footer {
     gap: 20px;                 /* Space between the child boxes */
     border: 1px solid #ccc;
     padding: 15px;
-    width: 750px;              /* Container width */
+    width: 250px;              /* Container width */
     margin: 20px 20px 20px 20px;/* Adjust margins as needed */
     background-color: #f9f9f9;
 }
+
+#gpioControls h3 {
+    width: 100%;
+    margin: 0 auto;
+    text-align: center;
+  }
 
 #powerControl,
 #flashModes {
     flex: 1;         /* Each takes up equal space */
     margin: 0 10px;  /* Horizontal spacing between sections */
-    min-width: 280px; /* Prevent sections from being too narrow */
+   
 }
 
 #voltageCurrent {
@@ -202,4 +208,63 @@ footer {
 
 #darkModeContainer label {
     margin-right: 10px; /* Add some space between label and checkbox */
+}
+
+.toggle-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1em;
+}
+
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+  margin-right: 10px;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+#powerControl .toggle-container,
+#flashModes .toggle-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

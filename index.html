@@ -10,8 +10,13 @@
 </head>
 <body>
     <div id="darkModeContainer">
-        <label for="darkModeToggle">Dark Mode</label>
-        <input type="checkbox" id="darkModeToggle">
+        <div class="toggle-container">
+            <label class="toggle">
+                <input type="checkbox" id="darkModeToggle">
+                <span class="slider round"></span>
+            </label>
+            <span>Dark Mode</span>
+        </div>
     </div>
 
     <h1>Power Control and Flash Mode Selector</h1>
@@ -24,17 +29,25 @@
         <!-- Power Control Section -->
         <div id="powerControl">
             <h3>Power Control</h3>
-            <div class="gpio-slider">
-                <input type="checkbox" id="gpio11" />
-                <label for="gpio11">12V Power</label>
+            <div class="toggle-container">
+                <label class="toggle">
+                    <input type="checkbox" id="gpio11" />
+                    <span class="slider round"></span>
+                </label>
+                <span>12V Power</span>
             </div>
         </div>
 
         <div id="flashModes">
             <h3>Flash Mode</h3>
-            <input type="checkbox" id="flashModeToggle">
-            <label for="flashModeToggle">Boot Flash</label>
-          </div>
+            <div class="toggle-container">
+                <label class="toggle">
+                    <input type="checkbox" id="flashModeToggle">
+                    <span class="slider round"></span>
+                </label>
+                <span>Boot Flash</span>
+            </div>
+        </div>
     </div>
 
     <div id="voltageCurrent" style="display: none;">
