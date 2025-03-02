@@ -1,0 +1,13 @@
+# Ignore build artifacts
+dist/
+node_modules/
+package-lock.json
+yarn.lock
+
+# Ignore temporary files
+*.log
+*.tmp
+Thumbs.db
+
+# Ignore operating system specific files
+.DS_Store
