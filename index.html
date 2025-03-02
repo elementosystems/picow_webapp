@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pico W WebUSB GPIO Controller</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="application.css">
+</head>
+<body>
+    <h1>Pico W WebUSB GPIO Controller</h1>
+
+    <button id="connect">Connect to Pico W</button>
+    <div id="status">Disconnected</div>
+
+    <div id="gpioControls" style="display: none;">
+        <h2>GPIO Controls</h2>
+        <div class="gpio-group">
+            <h3>GPIO 11</h3>
+            <label class="switch">
+              <input type="checkbox" id="gpio11">
+              <span class="slider round"></span>
+            </label>
+        </div>
+        <div class="gpio-group">
+            <h3>GPIO 12</h3>
+            <label class="switch">
+              <input type="checkbox" id="gpio12">
+              <span class="slider round"></span>
+            </label>
+        </div>
+        <div class="gpio-group">
+            <h3>GPIO 13</h3>
+            <label class="switch">
+              <input type="checkbox" id="gpio13">
+              <span class="slider round"></span>
+            </label>
+        </div>
+    </div>
+    <details>
+        <summary>Advanced</summary>
+        <div id="console">
+            <h2>Console</h2>
+            <div id="sender_lines" class="lines"></div>
+            <div id="receiver_lines" class="lines"></div>
+            <input id="command_line" type="text" placeholder="Type a command...">
+        </div>
+    </details>
+
+    <script src="serial.js"></script>
+    <script src="application.js"></script>
+</body>
+</html>
