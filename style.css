@@ -1,0 +1,83 @@
+body {
+    font-family: sans-serif;
+    text-align: center;
+    padding: 20px;
+}
+
+button {
+    padding: 10px 20px;
+    margin: 5px;
+    background-color: #4CAF50; /* Green */
+    border: none;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #367c39;
+}
+
+#gpioControls {
+    margin-top: 20px;
+}
+
+.gpio-group {
+    margin-bottom: 15px;
+}
+
+#status {
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+#log {
+    margin-top: 20px;
+    text-align: left;
+}
+
+#log div {
+    padding: 5px;
+    border-bottom: 1px solid #ccc;
+}
+
+#console {
+    margin-top: 20px;
+    text-align: left;
+    border: 1px solid #ccc;
+    padding: 10px;
+}
+
+.lines {
+    height: 100px;
+    overflow-y: scroll;
+    border-bottom: 1px solid #ccc;
+    padding: 5px;
+}
+
+.line {
+    padding: 2px;
+    font-family: monospace;
+}
+
+#command_line {
+    width: 100%;
+    padding: 5px;
+    margin-top: 5px;
+    box-sizing: border-box;
+}
+
+details {
+    margin-top: 20px;
+    border: 1px solid #ccc;
+    padding: 10px;
+}
+
+details summary {
+    cursor: pointer;
+    font-weight: bold;
+}
