@@ -411,6 +411,7 @@ body.dark-mode #darkModeContainer label {
   color: #eee; /* Light text for readability on dark backgrounds */
 }
 
+
 #connection #status {
     margin-bottom: 0;
     align-self: center;
