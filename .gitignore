@@ -11,3 +11,4 @@ Thumbs.db
 
 # Ignore operating system specific files
 .DS_Store
+.parcel-cache

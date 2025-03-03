@@ -20,6 +20,24 @@
         try {
           serialPort = await serial.requestPort();
           await serialPort.connect();
+
+          // Set up a callback to process incoming data
+          serialPort.onReceive = function(data) {
+            // Decode the received data into text.
+            const decoder = new TextDecoder();
+            const text = decoder.decode(data.buffer);
+            console.log("Received:", text);
+
+            // Look for a current value in the received text, e.g., "Current: -0.007 A"
+            if (text.includes("Current:")) {
+              const match = text.match(/Current:\s*(-?\d+\.\d+)\s*A/);
+              if (match) {
+                const currentVal = match[1];
+                document.getElementById("current").textContent = "Current: " + currentVal + " A";
+              }
+            }
+          };
+
           statusDisplay.textContent = 'Connected';
           gpioControls.style.display = 'block';
           voltageCurrent.style.display = 'block'; // Show voltage/current section
