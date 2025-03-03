@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power & Flash Selector</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="application.css">
+    <link rel="stylesheet" href="darkmode.css">
+</head>
+<body>
+    <div class="container">
+        <div id="darkModeContainer" class="top-right">
+            <div class="toggle-container">
+                <label class="toggle">
+                    <input type="checkbox" id="darkModeToggle">
+                    <span class="slider round"></span>
+                </label>
+                <span>Dark Mode</span>
+            </div>
+        </div>
+
+        <header>
+            <h1>Power Control and Flash Mode Selector</h1>
+        </header>
+
+        <section id="connection">
+            <div class="connection-label">Device Connection</div>
+            <button id="connectDisconnect">Connect</button>
+            <div id="status">Disconnected</div>
+          </section>
+
+        <section id="gpioControls" style="display: none;">
+            <h2>Device Controls</h2>
+
+            <!-- Power Control Section -->
+            <div id="powerControl" class="device-section">
+                <h3>Power Control</h3>
+                <div class="toggle-container">
+                    <label class="toggle">
+                        <input type="checkbox" id="gpio11" />
+                        <span class="slider round"></span>
+                    </label>
+                    <span>12V Power</span>
+                </div>
+            </div>
+
+            <!-- Flash Mode Section -->
+            <div id="flashModes" class="device-section">
+                <h3>Flash Mode</h3>
+                <div class="toggle-container">
+                    <span>Normal&nbsp;</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="flashModeToggle">
+                        <span class="slider round"></span>
+                    </label>
+                    <span>Boot Flash</span>
+                </div>
+            </div>
+        </section>
+
+        <section id="voltageCurrent" style="display: none;">
+            <h3>Voltage &amp; Current</h3>
+            <p> Coming soon! </p>
+            <p id="voltage">Voltage: 0.0 V</p>
+            <p id="current">Current: 0.0 A</p>
+          </section>
+        <section id="advancedControls">
+            <details>
+                <summary>Advanced</summary>
+                <div id="console">
+                    <h2>Console</h2>
+                    <div id="sender_lines" class="lines"></div>
+                    <div id="receiver_lines" class="lines"></div>
+                    <input id="command_line" type="text" placeholder="Type a command...">
+                </div>      
+            </details>
+        </section>
+
+        <footer>
+            <p>&copy; Copyright 2025 BSADASHI</p>
+        </footer>
+    </div>
+    
+    <script src="serial.js"></script>
+    <script src="application.js"></script>
+    <script src="darkmode.js"></script>
+</body>
+</html>

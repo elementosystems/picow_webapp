@@ -1,0 +1,37 @@
+.gpio-slider {
+  display: block;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.gpio-slider label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.gpio-slider .slider {
+  display: inline-block;
+  margin: 0 auto;
+  width: 60px;
+  height: 20px;
+  background-color: red; /* Default OFF state */
+  border-radius: 10px;
+  position: relative;
+  transition: background-color 0.3s ease;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.gpio-slider .slider .thumb {
+  width: 16px;
+  height: 16px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  transform: translateX(2px); /* Starting position inside the slider */
+}
+
+/* Move the thumb when the checkbox is checked */
+.gpio-slider input[type="checkbox"]:checked + .slider .thumb {
+  transform: translateX(42px);
+}
