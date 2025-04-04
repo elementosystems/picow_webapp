@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="application.css">
     <link rel="stylesheet" href="darkmode.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 </head>
 <body>
     <div class="container">
@@ -28,7 +30,7 @@
             <div class="connection-label">Device Connection</div>
             <button id="connectDisconnect">Connect</button>
             <div id="status">Disconnected</div>
-          </section>
+        </section>
 
         <section id="gpioControls" style="display: none;">
             <h2>Device Controls</h2>
@@ -37,11 +39,12 @@
             <div id="powerControl" class="device-section">
                 <h3>Power Control</h3>
                 <div class="toggle-container">
+                    <span>Off&nbsp;</span>
                     <label class="toggle">
                         <input type="checkbox" id="gpio11" />
                         <span class="slider round"></span>
                     </label>
-                    <span>12V Power</span>
+                    <span>12V</span>
                 </div>
             </div>
 
@@ -49,23 +52,31 @@
             <div id="flashModes" class="device-section">
                 <h3>Flash Mode</h3>
                 <div class="toggle-container">
-                    <span>Normal&nbsp;</span>
+                    <span>Boot Flash&nbsp;</span>
                     <label class="toggle">
                         <input type="checkbox" id="flashModeToggle">
                         <span class="slider round"></span>
                     </label>
-                    <span>Boot Flash</span>
+                    <span>Normal</span>
                 </div>
             </div>
         </section>
 
-        <section id="voltageCurrent" style="display: none;">
-            <h3>Voltage &amp; Current</h3>
-            <p> Coming soon! </p>
-            <p id="voltage">Voltage: 0.0 V</p>
-            <p id="current">Current: 0.0 A</p>
-          </section>
-        <section id="advancedControls">
+        <!-- Graph Sections -->
+        <section id="currentSection" style="display: none;">
+            <h3>Current</h3>
+            <canvas id="currentChart" width="400" height="200"></canvas>
+            <p id="currentDisplay">Current: 0.0 A</p>
+        </section>
+          
+        <section id="voltageSection" style="display: none;">
+            <h3>Voltage</h3>
+            <canvas id="voltageChart" width="400" height="200"></canvas>
+            <p id="voltageDisplay">Voltage: 0.0 V</p>
+        </section>
+
+        <!-- Advanced Controls: moved below graphs -->
+        <section id="advancedControls" style="display: none;">
             <details>
                 <summary>Advanced</summary>
                 <div id="console">

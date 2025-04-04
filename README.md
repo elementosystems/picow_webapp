@@ -68,11 +68,35 @@ Replace `username`, `server`, and `/path/to/deployment/directory` with your serv
 - **Advanced Controls:**  
   - Click on the **Advanced** section to view console messages and other debug information.
 
+## Docker Image
+The repository includes a Dockerfile that hosts the contents of the dist folder in an NGINX server. The Dockerfile also uses BuildKit's TARGETARCH argument to execute an additional command only when building for AMD64.
+
+- **Building for AMD64**
+  To build the Docker image for an AMD64 system run:
+   ```
+   docker build -t picow_webapp .
+   ```
+
+- **Building for ARM (e.g. Raspberry Pi)**
+  Make sure you have Docker Buildx set up. Then build targeting ARM architecture (for example, ARMv7):
+   ```
+   docker buildx create --use --name mybuilder
+   docker buildx build --platform linux/arm/v7 --load -t picow_webapp
+   ```
+- **For a 64‑bit Raspberry Pi running ARM64, use:**
+  ```
+  docker buildx build --platform linux/arm64 --load -t picow_webapp .
+  ```
+- **Running the Docker Container:**
+  Once the image is built, run it with:
+  ```
+  docker run -d -p 8080:80 picow_webapp
+  ```
+  Then open http://localhost:8080 (or the appropriate host/port) to view the app.
 ## Additional Information
 
 For more details, refer to in-code comments within index.html and application.js.
 
 The Device we interface in this Webapp is the Rpi Pico W. 
 The microcontroller code can be found here at [PicoWWebUSB](https://github.com/elementosystems/PicoWWebUSB)
-
 
