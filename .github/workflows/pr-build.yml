@@ -42,7 +42,7 @@ jobs:
             docker buildx build \
             --platform linux/amd64 \
             --load \
-            -t registry.elementosystems.com/picow_webapp:${{ env.VERSION }} \
+            -t registry.elementosystems.com/picow_webapp:v${{ env.VERSION }} \
             .
 
       - name: Verify Docker Image
