@@ -4,6 +4,7 @@
   const CMD_GPIO_11 = 0x0B; // Byte for GPIO11
   const CMD_GPIO_12 = 0x0C; // Byte for GPIO12
   const CMD_GPIO_13 = 0x0D; // Byte for GPIO13
+  const CMD_GPIO_14 = 0x0E; // Byte for GPIO13
   const CMD_ON = 0x01;
   const CMD_OFF = 0x00;
 
@@ -162,6 +163,7 @@
           case "gpio11": gpioCommandByte = CMD_GPIO_11; break;
           case "gpio12": gpioCommandByte = CMD_GPIO_12; break;
           case "gpio13": gpioCommandByte = CMD_GPIO_13; break;
+          case "gpio14": gpioCommandByte = CMD_GPIO_14; break;
           default: console.error("Unknown GPIO pin"); return;
         }
         const commandBytes = [gpioCommandByte, onOffState];
@@ -180,16 +182,18 @@
     const flashModeToggle = document.getElementById('flashModeToggle');
     flashModeToggle.addEventListener('change', () => {
       if (flashModeToggle.checked) {
-        sendCommand('gpio12', CMD_OFF);
-        sendCommand('gpio13', CMD_OFF);
-      } else {
         sendCommand('gpio12', CMD_ON);
         sendCommand('gpio13', CMD_ON);
+      } else {
+        sendCommand('gpio12', CMD_OFF);
+        sendCommand('gpio13', CMD_OFF);
       }
     });
 
     document.getElementById('gpio11').addEventListener('change', () => 
       sendCommand('gpio11', document.getElementById('gpio11').checked ? CMD_OFF : CMD_ON));
+    document.getElementById('gpio14').addEventListener('change', () => 
+      sendCommand('gpio14', document.getElementById('gpio14').checked ? CMD_OFF : CMD_ON));
 
     // Updated slider handling for checkboxes (if your selectors match your HTML)
     const sliders = document.querySelectorAll('.gpio-slider .slider');
