@@ -191,9 +191,9 @@
     });
 
     document.getElementById('gpio11').addEventListener('change', () => 
-      sendCommand('gpio11', document.getElementById('gpio11').checked ? CMD_OFF : CMD_ON));
+      sendCommand('gpio11', document.getElementById('gpio11').checked ? CMD_ON : CMD_OFF));
     document.getElementById('gpio14').addEventListener('change', () => 
-      sendCommand('gpio14', document.getElementById('gpio14').checked ? CMD_OFF : CMD_ON));
+      sendCommand('gpio14', document.getElementById('gpio14').checked ? CMD_ON : CMD_OFF));
 
     // Updated slider handling for checkboxes (if your selectors match your HTML)
     const sliders = document.querySelectorAll('.gpio-slider .slider');
