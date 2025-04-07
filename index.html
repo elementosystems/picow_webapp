@@ -26,6 +26,12 @@
             <h1>Power Control and Flash Mode Selector</h1>
         </header>
 
+        <!-- Experimental Features Banner -->
+        <div id="experimental-banner" style="background-color: #fff3cd; color: #856404; padding: 10px; margin: 10px 0; text-align: center; font-weight: bold;">
+            ⚠️ Experimental Features: Current and voltage monitoring are in active development and may exhibit unexpected behavior. <br> No really... They do not work. 😢
+        </div>
+  
+
         <section id="connection">
             <div class="connection-label">Device Connection</div>
             <button id="connectDisconnect">Connect</button>
@@ -62,11 +68,11 @@
             </div>
             <!-- Debugger Control Section -->
             <div id="debuggerControl" class="device-section">
-                <h3>Debugger Control</h3>
+                <h3>Debugger Power</h3>
                 <div class="toggle-container">
                     <span>Off&nbsp;</span>
                     <label class="toggle">
-                        <input type="checkbox" id="gpio14">
+                        <input type="checkbox" id="debuggerControlToggle">
                         <span class="slider round"></span>
                     </label>
                     <span>On</span>

@@ -182,18 +182,18 @@
     const flashModeToggle = document.getElementById('flashModeToggle');
     flashModeToggle.addEventListener('change', () => {
       if (flashModeToggle.checked) {
-        sendCommand('gpio12', CMD_ON);
         sendCommand('gpio13', CMD_ON);
+        sendCommand('gpio14', CMD_ON);
       } else {
-        sendCommand('gpio12', CMD_OFF);
         sendCommand('gpio13', CMD_OFF);
+        sendCommand('gpio14', CMD_OFF);
       }
     });
 
     document.getElementById('gpio11').addEventListener('change', () => 
       sendCommand('gpio11', document.getElementById('gpio11').checked ? CMD_ON : CMD_OFF));
-    document.getElementById('gpio14').addEventListener('change', () => 
-      sendCommand('gpio14', document.getElementById('gpio14').checked ? CMD_ON : CMD_OFF));
+    document.getElementById('debuggerControlToggle').addEventListener('change', () => 
+      sendCommand('gpio12', document.getElementById('debuggerControlToggle').checked ? CMD_ON : CMD_OFF));
 
     // Updated slider handling for checkboxes (if your selectors match your HTML)
     const sliders = document.querySelectorAll('.gpio-slider .slider');
