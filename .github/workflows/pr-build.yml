@@ -40,7 +40,7 @@ jobs:
       - name: Build Docker image
         run: |
             docker buildx build \
-            --platform linux/amd64 \
+            --platform linux/amd64,linux/arm/v7,linux/arm64 \
             --load \
             -t registry.elementosystems.com/picow_webapp:v${{ env.VERSION }} \
             .
