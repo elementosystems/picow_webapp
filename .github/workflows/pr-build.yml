@@ -1,0 +1,49 @@
+name: PR Build & Test Docker Image
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: [self-hosted, Linux, X64]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Production Assets with Parcel
+        run: npx parcel build index.html
+
+      - name: Get version from version.json
+        id: get_version
+        run: |
+          echo "VERSION=$(jq -r '.version' version.json)" >> $GITHUB_ENV
+          echo "Version is $VERSION"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # Build the Docker image without pushing. The image is tagged with the version
+      - name: Build Docker image
+        run: |
+            docker buildx build \
+            --platform linux/amd64 \
+            --load \
+            -t registry.elementosystems.com/picow_webapp:v${{ env.VERSION }} \
+            .
+
+      - name: Verify Docker Image
+        run: docker images | grep picow_webapp
