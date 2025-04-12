@@ -57,28 +57,6 @@ jobs:
         run: |
           docker buildx build \
             --platform linux/amd64 \
+            --push \
             -t registry.elementosystems.com/picow_webapp:v${{ env.VERSION }} \
             .
-
-      # Step 9b: Build and push armv7 image (same tag)
-      - name: Build and push armv7 Docker image
-        run: |
-          docker buildx build \
-            --platform linux/arm/v7 \
-            -t registry.elementosystems.com/picow_webapp:v${{ env.VERSION }} \
-            .
-
-      # Step 9c: Build and push arm64 image (same tag)
-      - name: Build and push arm64 Docker image
-        run: |
-          docker buildx build \
-            --platform linux/arm64 \
-            -t registry.elementosystems.com/picow_webapp:v${{ env.VERSION }} \
-            .
-
-      # Step 10: Create and push multi-platform manifest using the same tag
-      - name: Create and push multi-platform manifest
-        run: |
-          docker buildx imagetools create \
-            --tag registry.elementosystems.com/picow_webapp:v${{ env.VERSION }} \
-            registry.elementosystems.com/picow_webapp:v${{ env.VERSION }}
