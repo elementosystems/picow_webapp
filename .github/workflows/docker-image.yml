@@ -55,9 +55,14 @@ jobs:
       # Step 9a: Build, tag, and push amd64 image using harbor registry commands
       - name: Build and push Docker image
         run: |
+          # Build the Docker image locally and tag it with a temporary name.
           docker buildx build \
-            --platform linux/amd64,linux/arm/v7,linux/arm64 \
-            -t harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }} \
-            --push \
+            --platform linux/amd64 \
+            -t pico_webapp:v${{ env.VERSION }} \
             .
-    
+          
+          # Tag the image using harbor registry format.
+          docker tag pico_webapp:v${{ env.VERSION }} harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }}
+          
+          # Push the tagged image to the harbor registry.
+          docker push harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }}
