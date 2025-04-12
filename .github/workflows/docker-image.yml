@@ -51,15 +51,13 @@ jobs:
         uses: docker/setup-buildx-action@v3
         with:
           driver: docker-container
-      # Step: Inspect Buildx configuration
-      - name: Inspect Buildx configuration
-        run: docker buildx inspect --bootstrap
 
-      # Step 9a: Build and push amd64 image (no separate tag)
-      - name: Build and push amd64 Docker image
+      # Step 9a: Build, tag, and push amd64 image using harbor registry commands
+      - name: Build and push Docker image
         run: |
           docker buildx build \
-            --platform linux/amd64 \
+            --platform linux/amd64,linux/arm/v7,linux/arm64 \
+            -t harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }} \
             --push \
-            -t harbor.elementosystems.com/pico_webapp/picow_webapp[:v${{ env.VERSION }}] \
             .
+    
