@@ -190,8 +190,8 @@
       }
     });
 
-    document.getElementById('gpio11').addEventListener('change', () => 
-      sendCommand('gpio11', document.getElementById('gpio11').checked ? CMD_ON : CMD_OFF));
+    // document.getElementById('gpio11').addEventListener('change', () => 
+    //   sendCommand('gpio11', document.getElementById('gpio11').checked ? CMD_ON : CMD_OFF));
     document.getElementById('debuggerControlToggle').addEventListener('change', () => 
       sendCommand('gpio12', document.getElementById('debuggerControlToggle').checked ? CMD_ON : CMD_OFF));
 
@@ -205,6 +205,30 @@
           checkbox.dispatchEvent(new Event('change'));
         }
       });
+    });
+
+    const ecuPowerToggle = document.getElementById('gpio11');
+    const delayOption = document.getElementById('ecuDelayOption');
+
+    ecuPowerToggle.addEventListener('change', () => {
+        if (ecuPowerToggle.checked) {
+            if (delayOption.checked) {
+                console.log("ECU Power will turn on after a 10-second delay.");
+                setTimeout(() => {
+                    // Replace this log with your actual command to turn on ECU power
+                    console.log("ECU Power turned on after 10s delay.");
+                    sendCommand('gpio11', CMD_ON);
+                }, 10000);
+            } else {
+                // Replace this log with your actual command to turn on ECU power immediately
+                console.log("ECU Power turned on immediately.");
+                sendCommand('gpio11', CMD_ON);
+            }
+        } else {
+            // Replace this log with your command to turn off ECU power if needed
+            console.log("ECU Power turned off.");
+            sendCommand('gpio11', CMD_OFF);
+        }
     });
   });
 })();
