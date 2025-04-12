@@ -57,7 +57,7 @@ jobs:
         run: |
           # Build the Docker image locally and tag it with a temporary name.
           docker buildx build \
-            --platform linux/amd64 \
+            --platform linux/amd64,linux/arm/v7,linux/arm64 \
             --load \
             -t pico_webapp:v${{ env.VERSION }} \
             .
