@@ -33,11 +33,11 @@ jobs:
           # Extract version from version.json and store it in VERSION
           VERSION=$(jq -r '.version' version.json)
           echo "version.json version: $VERSION"
-      
-          # Extract version from index.html footer (removing the preceding "v")
-          html_version=$(grep -oP '(?<=<div style="flex: 1; text-align: right; font-weight: bold;">\s*v)[^<]+' index.html | head -n1)
+          
+          # Extract version from index.html footer using sed (removing the preceding "v")
+          html_version=$(sed -n 's/.*<div style="flex: 1; text-align: right; font-weight: bold;">[[:space:]]*v\([^<][^<]*\)<.*/\1/p' index.html | head -n 1)
           echo "index.html version: $html_version"
-      
+          
           # Compare versions (fail if mismatched)
           if [ "$VERSION" != "$html_version" ]; then
             echo "Version mismatch: version.json ($VERSION) and index.html ($html_version)"
