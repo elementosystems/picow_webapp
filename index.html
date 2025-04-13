@@ -38,29 +38,28 @@
             <div id="status">Disconnected</div>
         </section>
 
-        <section id="gpioControls" style="display: none;">
+        <section id="gpioControls" style="display: none; width: 80%; margin: auto;">
             <h2>Device Controls</h2>
-
             <!-- Power Control Section -->
             <div id="powerControl" class="device-section">
-                <h3>ECU Power</h3>
+                <h3>ECU 12V Power</h3>
                 <div class="toggle-container">
                     <span>Off&nbsp;</span>
                     <label class="toggle">
                         <input type="checkbox" id="gpio11" />
                         <span class="slider round"></span>
                     </label>
-                    <span>12V</span>
+                    <span>On</span>
                 </div>
                 <!-- New option for a 10-second delay -->
-                <div class="delay-option">
+                <div class="delay-option" style="text-align: center;">
                     <label>
                         <input type="checkbox" id="ecuDelayOption" />
-                        Activate 10-second delay
+                        Activate 10-second delay (for 12V On only)
                     </label>
                 </div>
             </div>
-
+            
             <!-- Flash Mode Section -->
             <div id="flashModes" class="device-section">
                 <h3>Flash Mode</h3>
@@ -73,6 +72,7 @@
                     <span>Normal</span>
                 </div>
             </div>
+            
             <!-- Debugger Control Section -->
             <div id="debuggerControl" class="device-section">
                 <h3>Debugger Power</h3>
@@ -84,7 +84,7 @@
                     </label>
                     <span>On</span>
                 </div>
-              </div>
+            </div>
         </section>
 
         <!-- Graph Sections -->
