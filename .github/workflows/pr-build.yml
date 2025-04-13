@@ -52,22 +52,22 @@ jobs:
             docker buildx build \
             --platform linux/amd64 \
             --load \
-            -t registry.elementosystems.com/picow_webapp:v${{ env.VERSION }} \
+            -t harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }}-amd64 \
             . 
       - name: Build Docker image for arm v7
         run: |
             docker buildx build \
             --platform linux/arm/v7 \
             --load \
-            -t registry.elementosystems.com/picow_webapp:v${{ env.VERSION }} \
+            -t harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }}-armv7 \
             .
             
       - name: Build Docker image for arm64
         run: |
             docker buildx build \
-            --platform linux/arm64 \
+            --platform linux/amd64 \
+            -t harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }}-amd64 \
             --load \
-            -t registry.elementosystems.com/picow_webapp:v${{ env.VERSION }} \
             .
 
       - name: Verify Docker Image
