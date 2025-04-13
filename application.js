@@ -207,28 +207,49 @@
       });
     });
 
+    let ecuTimer = null;
     const ecuPowerToggle = document.getElementById('gpio11');
     const delayOption = document.getElementById('ecuDelayOption');
 
     ecuPowerToggle.addEventListener('change', () => {
-        if (ecuPowerToggle.checked) {
-            if (delayOption.checked) {
-                console.log("ECU Power will turn on after a 10-second delay.");
-                setTimeout(() => {
-                    // Replace this log with your actual command to turn on ECU power
-                    console.log("ECU Power turned on after 10s delay.");
-                    sendCommand('gpio11', CMD_ON);
-                }, 10000);
-            } else {
-                // Replace this log with your actual command to turn on ECU power immediately
-                console.log("ECU Power turned on immediately.");
-                sendCommand('gpio11', CMD_ON);
-            }
+      // If turning ECU power on
+      if (ecuPowerToggle.checked) {
+        if (delayOption.checked) {
+          console.log("ECU Power will turn on after a 10-second delay.");
+          ecuTimer = setTimeout(() => {
+            console.log("ECU Power turned on after 10s delay.");
+            sendCommand('gpio11', CMD_ON);
+            ecuTimer = null;
+          }, 10000);
         } else {
-            // Replace this log with your command to turn off ECU power if needed
-            console.log("ECU Power turned off.");
-            sendCommand('gpio11', CMD_OFF);
+          // If delay is not selected, execute immediately and cancel any pending timer.
+          if (ecuTimer !== null) {
+            clearTimeout(ecuTimer);
+            ecuTimer = null;
+          }
+          console.log("ECU Power turned on immediately.");
+          sendCommand('gpio11', CMD_ON);
         }
+      } else {
+        // If turning ECU power off, cancel any pending delay and send off command.
+        if (ecuTimer !== null) {
+          clearTimeout(ecuTimer);
+          ecuTimer = null;
+        }
+        console.log("ECU Power turned off.");
+        sendCommand('gpio11', CMD_OFF);
+      }
+    });
+    delayOption.addEventListener('change', () => {
+      if (!delayOption.checked && ecuTimer !== null) {
+        console.log("Delay canceled; sending ECU Power ON immediately.");
+        clearTimeout(ecuTimer);
+        ecuTimer = null;
+        // Only send command if the toggle is still on.
+        if (ecuPowerToggle.checked) {
+          sendCommand('gpio11', CMD_ON);
+        }
+      }
     });
   });
 })();
