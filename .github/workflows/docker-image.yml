@@ -28,11 +28,22 @@ jobs:
         run: npx parcel build index.html
 
       # Step 5: Get version from version.json
-      - name: Get version from version.json
-        id: get_version
+      - name: Verify version consistency
         run: |
-          echo "VERSION=$(jq -r '.version' version.json)" >> $GITHUB_ENV
-          echo "Version = $VERSION"
+          # Extract version from version.json and store it in VERSION
+          VERSION=$(jq -r '.version' version.json)
+          echo "version.json version: $VERSION"
+      
+          # Extract version from index.html footer (removing the preceding "v")
+          html_version=$(grep -oP '(?<=<div style="flex: 1; text-align: right; font-weight: bold;">\s*v)[^<]+' index.html | head -n1)
+          echo "index.html version: $html_version"
+      
+          # Compare versions (fail if mismatched)
+          if [ "$VERSION" != "$html_version" ]; then
+            echo "Version mismatch: version.json ($VERSION) and index.html ($html_version)"
+            exit 1
+          fi
+
 
       # Step 6: Log in to Docker registry
       - name: Log in to Docker registry

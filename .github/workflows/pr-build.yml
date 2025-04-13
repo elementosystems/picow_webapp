@@ -24,11 +24,21 @@ jobs:
       - name: Build Production Assets with Parcel
         run: npx parcel build index.html
 
-      - name: Get version from version.json
-        id: get_version
+      - name: Verify version consistency
         run: |
-          echo "VERSION=$(jq -r '.version' version.json)" >> $GITHUB_ENV
-          echo "Version is $VERSION"
+          # Extract version from version.json and store it in VERSION
+          VERSION=$(jq -r '.version' version.json)
+          echo "version.json version: $VERSION"
+      
+          # Extract version from index.html footer (removing the preceding "v")
+          html_version=$(grep -oP '(?<=<div style="flex: 1; text-align: right; font-weight: bold;">\s*v)[^<]+' index.html | head -n1)
+          echo "index.html version: $html_version"
+      
+          # Compare versions (fail if mismatched)
+          if [ "$VERSION" != "$html_version" ]; then
+            echo "Version mismatch: version.json ($VERSION) and index.html ($html_version)"
+            exit 1
+          fi
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
