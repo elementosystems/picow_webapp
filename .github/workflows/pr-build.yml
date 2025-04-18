@@ -1,93 +1,94 @@
---- 
-  name: "PR Build & Test Docker Image"
-  
-  on:
-    pull_request:
-      branches:
-        - main
-  
-  jobs:
-    lint:
-      name: "Lint"
-      runs-on: [self-hosted, Linux, X64]
-      steps:
-        - name: "Check out the codebase"
-          uses: actions/checkout@v2
-  
-        - name: "Set up Python 3"
-          uses: actions/setup-python@v2
-          with:
-            python-version: "3.x"
-  
-        - name: "Install test dependencies"
-          run: |
-            pip3 install yamllint
-  
-        - name: "Lint all the YAMLs"
-          run: yamllint .
-  
-    build:
-      runs-on: [self-hosted, Linux, X64]
-      steps:
-        - name: "Checkout Repository"
-          uses: actions/checkout@v4
-  
-        - name: "Set up Node.js"
-          uses: actions/setup-node@v4
-          with:
-            node-version: "16"
-  
-        - name: "Install Dependencies"
-          run: npm install
-  
-        - name: "Build Production Assets with Parcel"
-          run: npx parcel build index.html
-  
-        - name: "Verify version consistency"
-          run: |
-            # Extract version from version.json and store it in VERSION
-            VERSION=$(jq -r '.version' version.json)
-            echo "version.json version: $VERSION"
-            
-            # Collapse index.html into a single line and extract footer version
-            html_version=$(tr '\n' ' ' < index.html | sed -E -n 's/.*<div style="flex: 1; text-align: right; font-weight: bold;">[[:space:]]*v([0-9.]+).*<\/div>.*/\1/p')
-            echo "index.html version: $html_version"
-            
-            # Compare versions (fail if mismatched)
-            if [ "$VERSION" != "$html_version" ]; then
-              echo "Version mismatch: version.json ($VERSION) and index.html ($html_version)"
-              exit 1
-            fi
-  
-        - name: "Set up QEMU"
-          uses: docker/setup-qemu-action@v3
-  
-        - name: "Set up Docker Buildx"
-          uses: docker/setup-buildx-action@v3
-  
-        - name: "Build Docker image for x86"
-          run: |
-            docker buildx build \
-              --platform linux/amd64 \
-              --load \
-              -t harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }}-amd64 \
-              .
-  
-        - name: "Build Docker image for arm v7"
-          run: |
-            docker buildx build \
-              --platform linux/arm/v7 \
-              --load \
-              -t harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }}-armv7 \
-              .
-  
-        - name: "Build Docker image for arm64"
-          run: |
-            docker buildx build \
-              --platform linux/amd64 \
-              -t harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }}-amd64 \
-              --load \
-              .
-  
-        - name: "Verify Docker Image"
-          run: docker images | grep picow_webapp
+---
+
+name: "PR Build & Test Docker Image"
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint:
+    name: "Lint"
+    runs-on: [self-hosted, Linux, X64]
+    steps:
+      - name: "Check out the codebase"
+        uses: actions/checkout@v2
+
+      - name: "Set up Python 3"
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+
+      - name: "Install test dependencies"
+        run: |
+          pip3 install yamllint
+
+      - name: "Lint all the YAMLs"
+        run: yamllint .
+
+  build:
+    runs-on: [self-hosted, Linux, X64]
+    steps:
+      - name: "Checkout Repository"
+        uses: actions/checkout@v4
+
+      - name: "Set up Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: "16"
+
+      - name: "Install Dependencies"
+        run: npm install
+
+      - name: "Build Production Assets with Parcel"
+        run: npx parcel build index.html
+
+      - name: "Verify version consistency"
+        run: |
+          # Extract version from version.json and store it in VERSION
+          VERSION=$(jq -r '.version' version.json)
+          echo "version.json version: $VERSION"
+          
+          # Collapse index.html into a single line and extract footer version
+          html_version=$(tr '\n' ' ' < index.html | sed -E -n 's/.*<div style="flex: 1; text-align: right; font-weight: bold;">[[:space:]]*v([0-9.]+).*<\/div>.*/\1/p')
+          echo "index.html version: $html_version"
+          
+          # Compare versions (fail if mismatched)
+          if [ "$VERSION" != "$html_version" ]; then
+            echo "Version mismatch: version.json ($VERSION) and index.html ($html_version)"
+            exit 1
+          fi
+
+      - name: "Set up QEMU"
+        uses: docker/setup-qemu-action@v3
+
+      - name: "Set up Docker Buildx"
+        uses: docker/setup-buildx-action@v3
+
+      - name: "Build Docker image for x86"
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            --load \
+            -t harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }}-amd64 \
+            .
+
+      - name: "Build Docker image for arm v7"
+        run: |
+          docker buildx build \
+            --platform linux/arm/v7 \
+            --load \
+            -t harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }}-armv7 \
+            .
+
+      - name: "Build Docker image for arm64"
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            -t harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }}-amd64 \
+            --load \
+            .
+
+      - name: "Verify Docker Image"
+        run: docker images | grep picow_webapp
