@@ -51,9 +51,7 @@ jobs:
           echo "version.json version: $VERSION"
 
           # Collapse index.html into a single line and extract footer version
-          html_version=$(tr '\n' ' ' < index.html | sed -E -n \
-            's/.*<div style="flex: 1; text-align: right; font-weight: bold;"> \
-            [[:space:]]*v([0-9.]+).*<\/div>.*/\1/p')
+          html_version=$(tr '\n' ' ' < index.html | sed -E -n 's/.*<div style="flex: 1; text-align: right; font-weight: bold;"> [[:space:]]*v([0-9.]+).*<\/div>.*/\1/p')
           echo "index.html version: $html_version"
 
           # Compare versions (fail if mismatched)
