@@ -1,8 +1,10 @@
+---
 name: Build and Push Docker Image
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -34,11 +36,11 @@ jobs:
           VERSION=$(jq -r '.version' version.json)
           echo "version.json version: $VERSION"
           echo "VERSION=$(jq -r '.version' version.json)" >> $GITHUB_ENV
-          
+
           # Extract version from index.html footer using sed (removing the preceding "v")
           html_version=$(tr '\n' ' ' < index.html | sed -E -n 's/.*<div style="flex: 1; text-align: right; font-weight: bold;">[[:space:]]*v([0-9.]+).*<\/div>.*/\1/p')
           echo "index.html version: $html_version"
-          
+
           # Compare versions (fail if mismatched)
           if [ "$VERSION" != "$html_version" ]; then
             echo "Version mismatch: version.json ($VERSION) and index.html ($html_version)"
@@ -73,7 +75,7 @@ jobs:
             --load \
             .
           docker push harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }}-amd64
-      
+
       - name: Build and push linux/arm/v7 image
         run: |
           docker buildx build \
@@ -82,7 +84,7 @@ jobs:
             --load \
             .
           docker push harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }}-armv7
-      
+
       - name: Build and push linux/arm64 image
         run: |
           docker buildx build \
@@ -91,12 +93,12 @@ jobs:
             --load \
             .
           docker push harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }}-arm64
-      
+
       - name: Create and push multi-arch manifest
         run: |
           docker manifest create harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }} \
             harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }}-amd64 \
             harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }}-armv7 \
             harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }}-arm64
-          
+
           docker manifest push harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }}
