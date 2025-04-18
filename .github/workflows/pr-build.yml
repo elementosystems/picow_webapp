@@ -10,7 +10,7 @@ on:
 jobs:
   lint:
     name: "Lint"
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ["self-hosted", "Linux", "X64"]
     steps:
       - name: "Check out the codebase"
         uses: actions/checkout@v2
@@ -28,7 +28,7 @@ jobs:
         run: yamllint .
 
   build:
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ["self-hosted", "Linux", "X64"]
     steps:
       - name: "Checkout Repository"
         uses: actions/checkout@v4
@@ -49,14 +49,17 @@ jobs:
           # Extract version from version.json and store it in VERSION
           VERSION=$(jq -r '.version' version.json)
           echo "version.json version: $VERSION"
-          
+
           # Collapse index.html into a single line and extract footer version
-          html_version=$(tr '\n' ' ' < index.html | sed -E -n 's/.*<div style="flex: 1; text-align: right; font-weight: bold;">[[:space:]]*v([0-9.]+).*<\/div>.*/\1/p')
+          html_version=$(tr '\n' ' ' < index.html | sed -E -n \
+            's/.*<div style="flex: 1; text-align: right; font-weight: bold;"> \
+            [[:space:]]*v([0-9.]+).*<\/div>.*/\1/p')
           echo "index.html version: $html_version"
-          
+
           # Compare versions (fail if mismatched)
           if [ "$VERSION" != "$html_version" ]; then
-            echo "Version mismatch: version.json ($VERSION) and index.html ($html_version)"
+            echo "Version mismatch: version.json ($VERSION) \
+              and index.html ($html_version)"
             exit 1
           fi
 
@@ -71,7 +74,8 @@ jobs:
           docker buildx build \
             --platform linux/amd64 \
             --load \
-            -t harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }}-amd64 \
+            -t harbor.elementosystems.com/pico_webapp/picow_webapp:\
+              v${{ env.VERSION }}-amd64 \
             .
 
       - name: "Build Docker image for arm v7"
