@@ -72,8 +72,7 @@ jobs:
           docker buildx build \
             --platform linux/amd64 \
             --load \
-            -t harbor.elementosystems.com/pico_webapp/picow_webapp:\
-              v${{ env.VERSION }}-amd64 \
+            -t harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }}-amd64 \
             .
 
       - name: "Build Docker image for arm v7"
