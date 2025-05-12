@@ -1,4 +1,4 @@
-FROM nginx:1.27-alpine3.21
+FROM nginx:1.28-alpine3.21
 
 # Update package index and explicitly upgrade libxml2 to ensure fixed version
 RUN apk update && \
