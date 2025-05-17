@@ -27,3 +27,22 @@ body.dark-mode #currentDisplay,
 body.dark-mode #voltageDisplay {
   color: #eee; /* Light text for dark backgrounds */
 }
+
+body.dark-mode .toolbar {
+  background: #23272e;
+  border-bottom: 1px solid #444;
+}
+
+body.dark-mode .toolbar button {
+  background-color: #c0392b;
+  color: #fff;
+}
+
+body.dark-mode .toolbar span,
+body.dark-mode .toolbar label {
+  color: #eee;
+}
+
+body.dark-mode .toggle-container span {
+  color: #fff;
+}
