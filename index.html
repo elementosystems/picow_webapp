@@ -12,14 +12,29 @@
 </head>
 <body>
     <div class="container">
-        <div id="darkModeContainer" class="top-right">
-            <div class="toggle-container">
-                <label class="toggle">
+        <!-- Top bar with dark mode on the left and report bug on the right -->
+        <div id="toolbar" style="
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+    background: #fafbfc;
+  ">
+            <!-- Dark Mode Toggle: now on the left -->
+            <div class="toggle-container" style="display: flex; align-items: center; gap: 8px; padding-left: 16px;">
+                <label class="toggle" style="margin-bottom: 0;">
                     <input type="checkbox" id="darkModeToggle">
                     <span class="slider round"></span>
                 </label>
-                <span>Dark Mode</span>
+                <span style="font-size: 0.98rem;">Dark Mode</span>
             </div>
+            <!-- Report Bug Button: stays on the right -->
+            <a href="https://github.com/elementosystems/picow_webapp/issues/new" target="_blank" rel="noopener" style="display: flex; align-items: center; height: 100%; padding-right: 16px;">
+                <button style="padding: 6px 18px; font-size: 0.97rem; background-color: #e74c3c; color: #fff; border: none; border-radius: 4px; cursor: pointer; transition: background 0.2s;">
+                    Report Bug
+                </button>
+            </a>
         </div>
 
         <header>
@@ -28,8 +43,9 @@
 
         <!-- Experimental Features Banner -->
         <div id="experimental-banner" style="background-color: #8ed065; color: #856404; padding: 10px; margin: 10px 0; text-align: center; font-weight: bold;">
-            <span>&#9888;</span> Experimental Features: Current and voltage monitoring are in beta and continuously being improved. <br> Please report any issues you encounter <a href="https://github.com/elementosystems/picow_webapp/issues/new">here</a>
+            <span>&#9888;</span> Experimental Features: Current and voltage monitoring are in beta and continuously being improved. <br> Please report any issues you encounter using Report Bug button</a>
         </div>
+
   
 
         <section id="connection">
