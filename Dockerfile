@@ -2,8 +2,11 @@ FROM nginx:1.28-alpine3.21
 
 # Update package index and explicitly upgrade libxml2 to ensure fixed version
 RUN apk update && \
+    apk upgrade && \
     apk add --no-cache libxml2>=2.13.8 && \
     rm -rf /var/cache/apk/*
+
+RUN apk info libxml2
 
 COPY dist/ /usr/share/nginx/html
 
