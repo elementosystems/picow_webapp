@@ -10,7 +10,7 @@ on:
 jobs:
   lint:
     name: "Lint"
-    runs-on: ["self-hosted", "Linux", "X64"]
+    runs-on: ["self-hosted"]
     steps:
       - name: "Check out the codebase"
         uses: actions/checkout@v4
