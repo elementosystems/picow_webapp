@@ -1,0 +1,13 @@
+/* small glue styles for React app; main styles are kept in root css files */
+:root { --container-max: 900px }
+body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif }
+.container { max-width: var(--container-max); margin: 0 auto; padding: 30px }
+header h1 { text-align: center }
+main { display: grid; grid-template-columns: 1fr; gap: 16px }
+section { margin-bottom: 12px }
+
+#connection { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 20px }
+#gpioControls { display: flex; gap: 12px; justify-content: center; align-items: flex-start }
+
+/* Reuse existing toggle styles in style.css; ensure Plotly charts are responsive */
+.js-plotly-plot { width: 100% !important }
