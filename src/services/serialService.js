@@ -70,6 +70,7 @@ class PortWrapper {
   const serialService = {
     port: null,
     telemetryCb: null,
+    connectionCbs: [],
     textDecoder: new TextDecoder(),
 
     requestPort() {
@@ -83,6 +84,8 @@ class PortWrapper {
     connect() {
       if (!this.port) return Promise.reject(new Error('No port selected'))
       return this.port.connect().then(() => {
+        // notify connection listeners
+        this.connectionCbs.forEach(cb => { try { cb(true) } catch (e) {} })
         // wire up receive handling
         this.port.onReceive = (dataView) => {
           try {
@@ -131,6 +134,7 @@ class PortWrapper {
     },
 
     setOnTelemetry(cb) { this.telemetryCb = cb },
+    addOnConnectionChange(cb) { if (typeof cb === 'function') this.connectionCbs.push(cb) },
     isConnected() { return !!this.port }
   }
 

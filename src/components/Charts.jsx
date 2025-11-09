@@ -5,6 +5,8 @@ import serialService from '../services/serialService'
 export default function Charts() {
   const [currentData, setCurrentData] = useState([])
   const [voltageData, setVoltageData] = useState([])
+  const [connected, setConnected] = useState(serialService.isConnected())
+  const [showDemo, setShowDemo] = useState(false)
 
   useEffect(() => {
     // Handler called when parsed telemetry is received
@@ -20,9 +22,20 @@ export default function Charts() {
 
     serialService.setOnTelemetry(onTelemetry)
 
-    // If device not connected, simulate data so graph UI can be verified
+    // subscribe to connection changes so we can hide/show charts
+    function onConn(c) {
+      setConnected(!!c)
+      // clear data when newly disconnected
+      if (!c) {
+        setCurrentData([])
+        setVoltageData([])
+      }
+    }
+    serialService.addOnConnectionChange(onConn)
+
+    // If device not connected and demo requested, simulate data so graph UI can be verified
     let simInterval = null
-    if (!serialService.isConnected()) {
+    if (!serialService.isConnected() && showDemo) {
       simInterval = setInterval(() => {
         const now = new Date()
         const simulatedCurrent = (Math.sin(now.getTime() / 1000) * 0.02 - 0.01).toFixed(4)
@@ -33,9 +46,24 @@ export default function Charts() {
 
     return () => {
       serialService.setOnTelemetry(null)
+      // Note: serialService currently accumulates connection callbacks; we do not remove here
       if (simInterval) clearInterval(simInterval)
     }
-  }, [])
+    // include showDemo so simulation starts/stops when toggled
+  }, [showDemo])
+
+  // If not connected and not showing demo data, show a placeholder and a toggle
+  if (!connected && !showDemo) {
+    return (
+      <div style={{textAlign: 'center', padding: 20}}>
+        <p>Device not connected. Connect the Pico W to view live voltage and current graphs.</p>
+        <label style={{display: 'inline-flex', alignItems: 'center', gap: 8}}>
+          <input type="checkbox" checked={showDemo} onChange={e => setShowDemo(e.target.checked)} />
+          <span>Show demo data</span>
+        </label>
+      </div>
+    )
+  }
 
   return (
     <div>
