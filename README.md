@@ -4,8 +4,15 @@ This project is a web-based application for controlling power and flash modes of
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/) (v16 or later recommended)
-- [npm](https://www.npmjs.com/) (included with Node.js)
+1. **Install Node.js**
+   - Download [Node.js](https://nodejs.org/) (v16 or later recommended)
+   - During installation, ensure "Add to PATH" is checked
+   - Verify installation by opening a new terminal and running:
+     ```bash
+     node --version
+     npm --version
+     ```
+   If the commands aren't recognized, you may need to restart your computer for PATH changes to take effect.
 
 ## Setup
 
