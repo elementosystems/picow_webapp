@@ -1,11 +1,11 @@
 # Power Control and Flash Mode Selector
 
-This project is a web-based application for controlling power and flash modes of a device. It supports dark mode and includes a dedicated section for displaying voltage and current readings. The project uses Parcel for bundling.
+This project is a web-based application for controlling power and flash modes of a device. It supports dark mode and includes a dedicated section for displaying voltage and current readings with interactive Plotly charts. Built with React and Vite.
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/) (v14 or later recommended)
-- [Parcel Bundler](https://parceljs.org/) (installed via `npm`)
+- [Node.js](https://nodejs.org/) (v16 or later recommended)
+- [npm](https://www.npmjs.com/) (included with Node.js)
 
 ## Setup
 
@@ -19,19 +19,23 @@ This project is a web-based application for controlling power and flash modes of
    ```bash
    npm install
 
-## Development build
-For development and debug
-  ```bash
-  npx parcel index.html
-  ```
+## Development
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+This will start Vite's dev server with hot module replacement (HMR).
 
 ## Production Build
 
-For a production (release) build, use:
+Create a production build:
 
-  ```bash
-  npx parcel build index.html
-  ```
+```bash
+npm run build
+```
 
 This command will bundle and optimize your assets, and output the final files to the dist folder.
 

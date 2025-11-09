@@ -1,6 +1,5 @@
-(function () {
-  // Adapted from original serial.js into an ES module-like service object
-  class PortWrapper {
+// Adapted from serial.js into ES module
+class PortWrapper {
     constructor(device) {
       this.device_ = device
       this.interfaceNumber = 0
@@ -135,7 +134,4 @@
     isConnected() { return !!this.port }
   }
 
-  // export
-  if (typeof window !== 'undefined') window.__serialService = serialService
-  export default serialService
-})()
+export default serialService;
