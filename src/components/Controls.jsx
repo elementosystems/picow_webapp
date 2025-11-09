@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import serialService from '../services/serialService'
 
 export default function Controls() {
@@ -6,6 +6,13 @@ export default function Controls() {
   const [delayEnabled, setDelayEnabled] = useState(false)
   const [flashOn, setFlashOn] = useState(false)
   const [debugOn, setDebugOn] = useState(false)
+  const [connected, setConnected] = useState(serialService.isConnected())
+
+  useEffect(() => {
+    function onConn(c) { setConnected(!!c) }
+    serialService.addOnConnectionChange(onConn)
+    return () => serialService.removeOnConnectionChange(onConn)
+  }, [])
 
   function sendCommand(name, value) {
     serialService.sendCommand(name, value)
@@ -25,6 +32,8 @@ export default function Controls() {
       sendCommand('gpio11', 0)
     }
   }
+
+  if (!connected) return null
 
   return (
     <section id="gpioControls" style={{display: 'block'}}>

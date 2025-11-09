@@ -135,6 +135,7 @@ class PortWrapper {
 
     setOnTelemetry(cb) { this.telemetryCb = cb },
     addOnConnectionChange(cb) { if (typeof cb === 'function') this.connectionCbs.push(cb) },
+    removeOnConnectionChange(cb) { this.connectionCbs = this.connectionCbs.filter(fn => fn !== cb) },
     isConnected() { return !!this.port }
   }
 
