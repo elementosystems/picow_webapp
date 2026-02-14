@@ -36,13 +36,14 @@ jobs:
       - name: "Set up Node.js"
         uses: actions/setup-node@v5
         with:
-          node-version: "22"
+          node-version: "18"
+          cache: 'npm'
 
       - name: "Install Dependencies"
-        run: npm install
+        run: npm ci
 
-      - name: "Build Production Assets with Parcel"
-        run: npx parcel build index.html
+      - name: "Build Production Assets"
+        run: npm run build
 
       - name: "Verify version consistency"
         run: |

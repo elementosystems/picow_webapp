@@ -19,15 +19,16 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: '22'
+          node-version: '18'
+          cache: 'npm'
 
       # Step 3: Install dependencies
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      # Step 4: Build production assets
+      # Step 4: Build production assets (Vite)
       - name: Build production assets
-        run: npx parcel build index.html
+        run: npm run build
 
       # Step 5: Get version from version.json
       - name: Verify version consistency
