@@ -21,7 +21,7 @@ body.dark-mode {
 
 body.dark-mode .container {
     background-color: #444;
-    color: #333;
+  color: #eee;
     border-color: #ccc;
   }
 

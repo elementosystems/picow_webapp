@@ -82,6 +82,8 @@ Replace `username`, `server`, and `/path/to/deployment/directory` with your serv
 ## Docker Image
 The repository includes a Dockerfile that hosts the contents of the dist folder in an NGINX server. The Dockerfile also uses BuildKit's TARGETARCH argument to execute an additional command only when building for AMD64.
 
+Note: The Docker image expects the production `dist/` folder to exist. Build the app first with `npm run build` (which outputs `dist/`) before running `docker build`.
+
 - **Building for AMD64**
   To build the Docker image for an AMD64 system run:
    ```
