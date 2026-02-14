@@ -1,6 +1,6 @@
 {
   "name": "picow_webapp",
-  "version": "0.1.12",
+  "version": "0.2.1",
   "private": true,
   "scripts": {
     "dev": "vite",
