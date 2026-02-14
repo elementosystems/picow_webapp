@@ -28,8 +28,8 @@ export default function Charts() {
 
   useEffect(() => {
     const onTelemetry = (item) => {
-      // store latest telemetry in ref; actual chart updates happen at the configured sampleRate
-      latestTelemetryRef.current = item
+      // Merge incoming data with existing ref data (both current and voltage come in separate callbacks with same timestamp)
+      latestTelemetryRef.current = { ...latestTelemetryRef.current, ...item }
     }
 
     serialService.setOnTelemetry(onTelemetry)
