@@ -48,6 +48,20 @@ export default function Charts() {
         currentBufferRef.current = []
         voltageBufferRef.current = []
         lastProcessedTimeRef.current = null
+      } else {
+        // create charts when device connects
+        if (!currentChartRef.current && currentRef.current) {
+          const chart = createChart(currentRef.current, { width: currentRef.current.clientWidth, height: 240 })
+          const series = chart.addLineSeries({ color: 'red' })
+          currentChartRef.current = chart
+          currentSeriesRef.current = series
+        }
+        if (!voltageChartRef.current && voltageRef.current) {
+          const chart = createChart(voltageRef.current, { width: voltageRef.current.clientWidth, height: 240 })
+          const series = chart.addLineSeries({ color: 'blue' })
+          voltageChartRef.current = chart
+          voltageSeriesRef.current = series
+        }
       }
     }
 
