@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { createChart } from 'lightweight-charts'
 import serialService from '../services/serialService'
 
@@ -22,18 +22,19 @@ export default function Charts() {
 
   // buffers and latest telemetry
   const latestTelemetryRef = useRef({})
+  const lastProcessedTimeRef = useRef(null) // track last processed telemetry time to avoid duplicates
   const currentBufferRef = useRef([])
   const voltageBufferRef = useRef([])
 
   useEffect(() => {
-    function onTelemetry(item) {
+    const onTelemetry = (item) => {
       // store latest telemetry in ref; actual chart updates happen at the configured sampleRate
       latestTelemetryRef.current = item
     }
 
     serialService.setOnTelemetry(onTelemetry)
 
-    function onConn(c) {
+    const onConn = (c) => {
       setConnected(!!c)
       if (!c) {
         // clear charts when disconnected
@@ -43,24 +44,30 @@ export default function Charts() {
         voltageChartRef.current = null
         currentSeriesRef.current = null
         voltageSeriesRef.current = null
-      } else {
-        // create charts when connected
-        if (!currentChartRef.current && currentRef.current) {
-          const chart = createChart(currentRef.current, { width: currentRef.current.clientWidth, height: 240 })
-          const series = chart.addLineSeries({ color: 'red' })
-          currentChartRef.current = chart
-          currentSeriesRef.current = series
-        }
-        if (!voltageChartRef.current && voltageRef.current) {
-          const chart = createChart(voltageRef.current, { width: voltageRef.current.clientWidth, height: 240 })
-          const series = chart.addLineSeries({ color: 'blue' })
-          voltageChartRef.current = chart
-          voltageSeriesRef.current = series
-        }
+        // clear buffers on disconnect
+        currentBufferRef.current = []
+        voltageBufferRef.current = []
+        lastProcessedTimeRef.current = null
       }
     }
 
     serialService.addOnConnectionChange(onConn)
+
+    // On mount: create charts if already connected
+    if (serialService.isConnected()) {
+      if (!currentChartRef.current && currentRef.current) {
+        const chart = createChart(currentRef.current, { width: currentRef.current.clientWidth, height: 240 })
+        const series = chart.addLineSeries({ color: 'red' })
+        currentChartRef.current = chart
+        currentSeriesRef.current = series
+      }
+      if (!voltageChartRef.current && voltageRef.current) {
+        const chart = createChart(voltageRef.current, { width: voltageRef.current.clientWidth, height: 240 })
+        const series = chart.addLineSeries({ color: 'blue' })
+        voltageChartRef.current = chart
+        voltageSeriesRef.current = series
+      }
+    }
 
     // periodic updater - drives chart updates at sampleRate
     let updateInterval = null
@@ -105,8 +112,11 @@ export default function Charts() {
     // start periodic updater that consumes latestTelemetryRef at sampleRate
     updateInterval = setInterval(() => {
       const item = latestTelemetryRef.current
-      if (item && (typeof item.current === 'number' || typeof item.voltage === 'number')) {
+      const itemTime = item && item.time ? item.time.getTime() : null
+      // only push if new data and has current or voltage
+      if (itemTime && itemTime !== lastProcessedTimeRef.current && (typeof item.current === 'number' || typeof item.voltage === 'number')) {
         pushTelemetryToBuffers(item)
+        lastProcessedTimeRef.current = itemTime
       }
     }, Math.max(100, sampleRate * 1000))
 
