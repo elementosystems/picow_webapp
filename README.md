@@ -1,3 +1,5 @@
+[![Build](https://github.com/elementosystems/picow_webapp/actions/workflows/docker-image.yml/badge.svg)](https://github.com/elementosystems/picow_webapp/actions/workflows/docker-image.yml)
+
 # Power Control and Flash Mode Selector
 
 This project is a web-based application for controlling power and flash modes of a device. It supports dark mode and includes a dedicated section for displaying voltage and current readings with interactive Plotly charts. Built with React and Vite.
