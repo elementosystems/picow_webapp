@@ -101,7 +101,7 @@ jobs:
 
       - name: Create and push multi-arch manifest
         run: |
-          docker manifest create harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }} \
+          docker manifest create --amend harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }} \
             harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }}-amd64 \
             harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }}-armv7 \
             harbor.elementosystems.com/pico_webapp/picow_webapp:v${{ env.VERSION }}-arm64
