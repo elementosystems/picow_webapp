@@ -90,11 +90,15 @@ export default function Charts() {
 
     function pushTelemetryToBuffers(item) {
       const now = toLightTime(item.time)
-      // append
-      currentBufferRef.current.push({ time: now, value: item.current })
-      voltageBufferRef.current.push({ time: now, value: item.voltage })
+      // only push values that actually exist (current and voltage come in separate lines)
+      if (typeof item.current === 'number') {
+        currentBufferRef.current.push({ time: now, value: item.current })
+      }
+      if (typeof item.voltage === 'number') {
+        voltageBufferRef.current.push({ time: now, value: item.voltage })
+      }
+      // trim old data from both buffers
       const cutoff = now - windowSeconds
-      // trim old
       while (currentBufferRef.current.length && currentBufferRef.current[0].time < cutoff) currentBufferRef.current.shift()
       while (voltageBufferRef.current.length && voltageBufferRef.current[0].time < cutoff) voltageBufferRef.current.shift()
       // update series data
