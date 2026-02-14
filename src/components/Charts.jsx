@@ -48,40 +48,10 @@ export default function Charts() {
         currentBufferRef.current = []
         voltageBufferRef.current = []
         lastProcessedTimeRef.current = null
-      } else {
-        // create charts when device connects
-        if (!currentChartRef.current && currentRef.current) {
-          const chart = createChart(currentRef.current, { width: currentRef.current.clientWidth, height: 240 })
-          const series = chart.addLineSeries({ color: 'red' })
-          currentChartRef.current = chart
-          currentSeriesRef.current = series
-        }
-        if (!voltageChartRef.current && voltageRef.current) {
-          const chart = createChart(voltageRef.current, { width: voltageRef.current.clientWidth, height: 240 })
-          const series = chart.addLineSeries({ color: 'blue' })
-          voltageChartRef.current = chart
-          voltageSeriesRef.current = series
-        }
       }
     }
 
     serialService.addOnConnectionChange(onConn)
-
-    // On mount: create charts if already connected
-    if (serialService.isConnected()) {
-      if (!currentChartRef.current && currentRef.current) {
-        const chart = createChart(currentRef.current, { width: currentRef.current.clientWidth, height: 240 })
-        const series = chart.addLineSeries({ color: 'red' })
-        currentChartRef.current = chart
-        currentSeriesRef.current = series
-      }
-      if (!voltageChartRef.current && voltageRef.current) {
-        const chart = createChart(voltageRef.current, { width: voltageRef.current.clientWidth, height: 240 })
-        const series = chart.addLineSeries({ color: 'blue' })
-        voltageChartRef.current = chart
-        voltageSeriesRef.current = series
-      }
-    }
 
     // periodic updater - drives chart updates at sampleRate
     let updateInterval = null
@@ -147,6 +117,25 @@ export default function Charts() {
       if (voltageChartRef.current) { voltageChartRef.current.remove(); voltageChartRef.current = null }
     }
   }, [showDemo, sampleRate, windowSeconds])
+
+  // Separate effect to handle chart creation when connected state changes
+  useEffect(() => {
+    if (connected && !showDemo) {
+      // Create charts when device connects (after re-render so refs are populated)
+      if (!currentChartRef.current && currentRef.current) {
+        const chart = createChart(currentRef.current, { width: currentRef.current.clientWidth, height: 240 })
+        const series = chart.addLineSeries({ color: 'red' })
+        currentChartRef.current = chart
+        currentSeriesRef.current = series
+      }
+      if (!voltageChartRef.current && voltageRef.current) {
+        const chart = createChart(voltageRef.current, { width: voltageRef.current.clientWidth, height: 240 })
+        const series = chart.addLineSeries({ color: 'blue' })
+        voltageChartRef.current = chart
+        voltageSeriesRef.current = series
+      }
+    }
+  }, [connected, showDemo])
 
   if (!connected && !showDemo) {
     return (
