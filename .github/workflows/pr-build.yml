@@ -42,28 +42,17 @@ jobs:
       - name: "Install Dependencies"
         run: npm ci
 
+      - name: "Check Version Consistency"
+        run: npm run check-versions
+
       - name: "Build Production Assets"
         run: npm run build
 
-      - name: "Verify version consistency"
+      - name: "Extract Version"
         shell: bash
         run: |
-          # Extract version from version.json and store it in VERSION
           VERSION=$(jq -r '.version' version.json)
-          echo "version.json version: $VERSION"
-
-          # Extract version from index.html. Prefer meta tag, fall back to footer.
-          html_version=$(sed -n 's/.*<meta name="app-version" content="\([^"]*\)".*/\1/p' index.html)
-          if [ -z "$html_version" ]; then
-            html_version=$(tr '\n' ' ' < index.html | sed -E -n 's/.*<div style="flex: 1; text-align: right; font-weight: bold;">[[:space:]]*v([0-9.]+).*<\/div>.*/\1/p')
-          fi
-          echo "index.html version: $html_version"
-
-          # Compare versions (fail if mismatched)
-          if [ "$VERSION" != "$html_version" ]; then
-            echo "Version mismatch: version.json ($VERSION) and index.html ($html_version)"
-            exit 1
-          fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: "Set up QEMU"
         uses: docker/setup-qemu-action@v3
