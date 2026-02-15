@@ -4,8 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/check-versions.js",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check-versions": "node scripts/check-versions.js",
+    "sync-versions": "node scripts/sync-versions.js",
+    "postversion": "npm run sync-versions"
   },
   "dependencies": {
     "react": "^18.2.0",
