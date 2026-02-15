@@ -1,4 +1,5 @@
 import React from 'react'
+import versionInfo from '../version.json'
 import Connection from './components/Connection'
 import Controls from './components/Controls'
 import Charts from './components/Charts'
@@ -32,7 +33,7 @@ export default function App() {
         <div style={{flex: 1, textAlign: 'center'}}>
           <p style={{margin: 0, fontWeight: 'bold'}}>&copy;2025 BSADASHI</p>
         </div>
-        <div style={{flex: 1, textAlign: 'right', fontWeight: 'bold'}}>v0.1.12</div>
+        <div style={{flex: 1, textAlign: 'right', fontWeight: 'bold'}}>v{versionInfo.version}</div>
       </footer>
     </div>
   )
