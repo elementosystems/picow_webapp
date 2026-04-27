@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import serialService from '../services/serialService'
+import eventBus from '../services/eventBus'
 
 function Switch({ id, checked, onChange, label }) {
   return (
@@ -70,20 +71,26 @@ export default function Controls() {
     if (on) {
       if (delayEnabled) {
         setPendingDelay(true)
+        eventBus.emit('info', 'ctrl', 'ECU 12V arming (10s delay started)')
         delayTimerRef.current = setTimeout(() => {
           sendCommand('gpio11', 1)
           setPendingDelay(false)
+          delayTimerRef.current = null
+          eventBus.emit('info', 'ctrl', 'ECU 12V armed (delay fired) -> ON')
         }, 10000)
       } else {
         sendCommand('gpio11', 1)
+        eventBus.emit('info', 'ctrl', 'ECU 12V -> ON')
       }
     } else {
       if (delayTimerRef.current) {
         clearTimeout(delayTimerRef.current)
         delayTimerRef.current = null
         setPendingDelay(false)
+        eventBus.emit('info', 'ctrl', 'ECU 12V arming cancelled')
       }
       sendCommand('gpio11', 0)
+      eventBus.emit('info', 'ctrl', 'ECU 12V -> OFF')
     }
   }
 
@@ -92,12 +99,14 @@ export default function Controls() {
     setFlashOn(on)
     sendCommand('gpio13', on ? 1 : 0)
     sendCommand('gpio14', on ? 1 : 0)
+    eventBus.emit('info', 'ctrl', 'Flash mode -> ' + (on ? 'BOOT' : 'NORMAL'))
   }
 
   function toggleDebug(e) {
     const on = e.target.checked
     setDebugOn(on)
     sendCommand('gpio12', on ? 1 : 0)
+    eventBus.emit('info', 'ctrl', 'Debugger -> ' + (on ? 'ON' : 'OFF'))
   }
 
   if (!connected) return null

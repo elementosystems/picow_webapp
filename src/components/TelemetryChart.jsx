@@ -26,15 +26,19 @@ function fmtNumber(v, digits) {
  * data:       [xs, ys1, ys2, ...]   (xs in unix seconds)
  * height:     chart pixel height
  * dualAxis:   if true, each series gets its own y scale (`y0`, `y1`, ...)
- * thresholds: optional array of `{ scale, value, color }` — drawn as dashed
- *             horizontal lines at the given y-value on the given scale.
- *             For single-axis charts, scale is "y". For dualAxis, use "y0" / "y1".
+ * thresholds: optional [{ scale, value, color }] — dashed horizontal lines at
+ *             the given y on the given scale. Single-axis: scale="y". Dual-axis:
+ *             "y0" / "y1".
+ * markers:    optional [{ ts (unix s), label?, color? }] — vertical dashed lines
+ *             drawn on the canvas via the uPlot draw hook.
  */
-export default function TelemetryChart({ series, data, height = 220, dualAxis = false, thresholds = [] }) {
+export default function TelemetryChart({ series, data, height = 220, dualAxis = false, thresholds = [], markers = [] }) {
   const containerRef = useRef(null)
   const plotRef = useRef(null)
   const seriesRef = useRef(series)
   seriesRef.current = series
+  const markersRef = useRef(markers)
+  markersRef.current = markers
 
   // Keep latest thresholds in a ref so the draw hook (which closes over it once
   // at chart construction) always sees the current value without forcing a remount.
@@ -91,9 +95,9 @@ export default function TelemetryChart({ series, data, height = 220, dualAxis = 
             }]),
       ],
       hooks: {
-        // Run after series strokes — draws dashed horizontal threshold lines on
-        // top of the series. We pull from the ref so prop updates are reflected
-        // without a remount.
+        // Two passes after series strokes: horizontal threshold lines + vertical
+        // event markers. Both pull from refs so prop updates take effect without
+        // a remount.
         draw: [
           (u) => {
             const lines = thresholdsRef.current
@@ -119,15 +123,50 @@ export default function TelemetryChart({ series, data, height = 220, dualAxis = 
             }
             ctx.restore()
           },
+          (u) => {
+            const list = markersRef.current
+            if (!list || list.length === 0) return
+            const ctx = u.ctx
+            const { left, top, width: plotW, height: plotH } = u.bbox
+            const fallbackColor = t.text || '#888'
+            ctx.save()
+            ctx.lineWidth = 1
+            ctx.setLineDash([4, 3])
+            ctx.font = '10px ui-monospace, Menlo, Consolas, monospace'
+            ctx.textBaseline = 'top'
+            for (const m of list) {
+              const xPos = u.valToPos(m.ts, 'x', true)
+              if (xPos == null || xPos < left || xPos > left + plotW) continue
+              ctx.strokeStyle = m.color || fallbackColor
+              ctx.beginPath()
+              ctx.moveTo(xPos + 0.5, top)
+              ctx.lineTo(xPos + 0.5, top + plotH)
+              ctx.stroke()
+              if (m.label) {
+                ctx.setLineDash([])
+                ctx.fillStyle = m.color || fallbackColor
+                const text = String(m.label)
+                const maxLen = 22
+                const display = text.length > maxLen ? text.slice(0, maxLen - 1) + '…' : text
+                ctx.fillText(display, xPos + 3, top + 2)
+                ctx.setLineDash([4, 3])
+              }
+            }
+            ctx.restore()
+          },
         ],
       },
     }
     return cfg
   }
 
-  // Mount plot
+  // Mount plot. Defer creation until the first non-empty data set arrives —
+  // uPlot's drawAxesGrid throws when axes are drawn with zero-length data, and
+  // a failed initial paint also stops our marker draw-hook from running.
   useLayoutEffect(() => {
     if (!containerRef.current) return
+    if (plotRef.current) return
+    if (!data || !data[0] || data[0].length === 0) return
     const width = containerRef.current.clientWidth
     const cfg = buildOptions(width)
     plotRef.current = new uPlot(cfg, data, containerRef.current)
@@ -137,8 +176,15 @@ export default function TelemetryChart({ series, data, height = 220, dualAxis = 
         plotRef.current = null
       }
     }
-    // Series structure changes are handled by destroy + remount via key prop in parent.
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data])
+
+  // Cleanup on unmount even if mount was deferred.
+  useEffect(() => () => {
+    if (plotRef.current) {
+      plotRef.current.destroy()
+      plotRef.current = null
+    }
   }, [])
 
   // Update data on prop change
@@ -148,13 +194,11 @@ export default function TelemetryChart({ series, data, height = 220, dualAxis = 
     }
   }, [data])
 
-  // Threshold prop changes don't require a remount — they're read from the ref
-  // by the draw hook — but we do need to repaint so the new lines show up.
+  // Threshold or marker prop changes don't require a remount — both are read
+  // from refs by the draw hook — but we do need to repaint to show the changes.
   useEffect(() => {
-    if (plotRef.current) {
-      plotRef.current.redraw(false, false)
-    }
-  }, [thresholds])
+    if (plotRef.current) plotRef.current.redraw(false, false)
+  }, [thresholds, markers])
 
   // Resize observer for responsive width
   useEffect(() => {

@@ -3,9 +3,10 @@ import versionInfo from '../version.json'
 import Connection from './components/Connection'
 import Controls from './components/Controls'
 import Charts from './components/Charts'
+import EventLog from './components/EventLog'
 import ScopePanel from './components/ScopePanel'
-import ThemeToggle from './components/DarkModeToggle'
 import SerialConsole from './components/SerialConsole'
+import ThemeToggle from './components/DarkModeToggle'
 
 export default function App() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
         <Connection />
         <Controls />
         <Charts />
+        <EventLog />
         <details className="disclosure">
           <summary>
             Oscilloscope

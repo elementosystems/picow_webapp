@@ -1,7 +1,22 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import serialService from '../services/serialService'
+import eventBus from '../services/eventBus'
 import TelemetryChart from './TelemetryChart'
 import { load, save, isBreach, SETTINGS_KEYS } from '../services/settings'
+
+// Map event source -> CSS variable name for marker color hint.
+const SOURCE_COLOR_VAR = {
+  conn: '--info',
+  ctrl: '--accent',
+  err: '--danger',
+}
+
+function colorForEvent(evt) {
+  // Errors always pop in danger color regardless of source.
+  if (evt.level === 'err') return readVar('--danger') || '#ff6e7a'
+  const v = SOURCE_COLOR_VAR[evt.source] || '--text-muted'
+  return readVar(v) || '#9ba4b6'
+}
 
 const RANGE_PRESETS = [
   { label: '30s', seconds: 30 },
@@ -159,6 +174,9 @@ export default function Charts() {
   const [thresholds, setThresholds] = useState(() => normalizeThresholds(load(SETTINGS_KEYS.thresholds, DEFAULT_THRESHOLDS)))
 
   const [tick, setTick] = useState(0) // forces re-render of charts on new data
+  const [allMarkers, setAllMarkers] = useState([])
+  const windowSecRef = useRef(windowSec)
+  useEffect(() => { windowSecRef.current = windowSec }, [windowSec])
 
   // Persist settings whenever they change.
   useEffect(() => { save(SETTINGS_KEYS.windowSec, windowSec) }, [windowSec])
@@ -241,6 +259,36 @@ export default function Charts() {
     return () => clearInterval(id)
   }, [showDemo, connected])
 
+  // Subscribe to the event bus so we can render markers on the charts.
+  useEffect(() => {
+    function toMarker(evt) {
+      return {
+        ts: Math.floor(evt.ts.getTime() / 1000),
+        label: evt.message,
+        color: colorForEvent(evt),
+        source: evt.source,
+        level: evt.level,
+      }
+    }
+    // seed from existing events
+    setAllMarkers(eventBus.getAll().map(toMarker))
+    const unsub = eventBus.subscribe((evt) => {
+      if (evt == null) {
+        // clear() pushes null
+        setAllMarkers([])
+        return
+      }
+      setAllMarkers(prev => {
+        const next = prev.slice()
+        next.push(toMarker(evt))
+        // bound memory — keep at most 200 markers (matches eventBus cap)
+        if (next.length > 200) next.splice(0, next.length - 200)
+        return next
+      })
+    })
+    return unsub
+  }, [])
+
   // Snapshot for pause: captures current arrays at moment of pause
   useEffect(() => {
     if (paused) {
@@ -277,6 +325,22 @@ export default function Charts() {
     current: computeStats(view.cur.filter(v => typeof v === 'number' && !Number.isNaN(v))),
     voltage: computeStats(view.vol.filter(v => typeof v === 'number' && !Number.isNaN(v))),
   }), [view])
+
+  // Trim markers to the visible window (matches the chart's x-range so markers
+  // outside the panned/zoomed view aren't drawn). Uses the data range when
+  // present, otherwise a "now - windowSec" fallback so markers can appear
+  // before any telemetry arrives.
+  const visibleMarkers = useMemo(() => {
+    let lo, hi
+    if (view.ts.length) {
+      hi = view.ts[view.ts.length - 1]
+      lo = hi - windowSec
+    } else {
+      hi = Math.floor(Date.now() / 1000)
+      lo = hi - windowSec
+    }
+    return allMarkers.filter(m => m.ts >= lo && m.ts <= hi + 2)
+  }, [allMarkers, view, windowSec])
 
   const lastUpdate = view.ts.length ? view.ts[view.ts.length - 1] * 1000 : null
 
@@ -525,6 +589,7 @@ export default function Charts() {
               data={splitData(view.cur)}
               height={220}
               thresholds={currentChartThresholds}
+              markers={visibleMarkers}
             />
           </ChartCard>
           <ChartCard title="Voltage" eyebrow="V" colorVar="--data-voltage" rangeLabel={`${windowSec}s`}>
@@ -534,6 +599,7 @@ export default function Charts() {
               data={splitData(view.vol)}
               height={220}
               thresholds={voltageChartThresholds}
+              markers={visibleMarkers}
             />
           </ChartCard>
         </section>
@@ -547,6 +613,7 @@ export default function Charts() {
               height={300}
               dualAxis
               thresholds={combinedChartThresholds}
+              markers={visibleMarkers}
             />
           </ChartCard>
         </section>

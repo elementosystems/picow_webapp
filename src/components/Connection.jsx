@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import serialService from '../services/serialService'
+import eventBus from '../services/eventBus'
 
 const STATE = {
   idle: { label: 'Disconnected', cls: 'status status--idle' },
@@ -24,10 +25,13 @@ export default function Connection() {
         await serialService.disconnect()
         setPhase('idle')
         setErrMsg('')
+        eventBus.emit('info', 'conn', 'Device disconnected')
       } catch (err) {
         console.error('Disconnect error', err)
         setPhase('error')
-        setErrMsg(err?.message || 'Failed to disconnect')
+        const msg = err?.message || 'Failed to disconnect'
+        setErrMsg(msg)
+        eventBus.emit('err', 'conn', 'Disconnect failed: ' + msg)
       }
       return
     }
@@ -38,10 +42,13 @@ export default function Connection() {
       await serialService.requestPort()
       await serialService.connect()
       setPhase('connected')
+      eventBus.emit('info', 'conn', 'Device connected')
     } catch (err) {
       console.error('Connect error', err)
       setPhase('error')
-      setErrMsg(err?.message || 'Could not open device')
+      const msg = err?.message || 'Could not open device'
+      setErrMsg(msg)
+      eventBus.emit('err', 'conn', 'Connect failed: ' + msg)
     }
   }
 

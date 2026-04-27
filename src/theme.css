@@ -1145,7 +1145,31 @@ p { margin: 0; }
 }
 .console__chip-sep { color: var(--text-faint); }
 
-.console__actions {
+/* --------------------------------------------------------------------------
+   Event log — observability card mounted under the charts.
+   -------------------------------------------------------------------------- */
+.event-log__header {
+  flex-wrap: wrap;
+  row-gap: var(--s-2);
+}
+.event-log__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 var(--s-2);
+  background: var(--surface-3);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+}
+
+.console__actions,
+.event-log__actions {
   display: flex;
   align-items: center;
   gap: var(--s-2);
@@ -1368,3 +1392,78 @@ details.disclosure[open] > .console {
 details.disclosure[open] > .console > .card__header {
   background: var(--surface-2);
 }
+
+/* --------------------------------------------------------------------------
+   Event log — list rows beneath the charts
+   -------------------------------------------------------------------------- */
+.event-log__body { padding: 0; }
+.event-log__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 360px;
+  overflow-y: auto;
+}
+.event-log__row {
+  display: grid;
+  grid-template-columns: auto auto auto 1fr;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-5);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+  color: var(--text);
+}
+.event-log__row:last-child { border-bottom: 0; }
+.event-log__row:hover { background: var(--surface-2); }
+.event-log__time {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  font-feature-settings: "tnum" 1;
+}
+.event-log__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-faint);
+  flex-shrink: 0;
+}
+.event-log__dot--info { background: var(--info); box-shadow: 0 0 0 3px var(--info-soft); }
+.event-log__dot--warn { background: var(--warn); box-shadow: 0 0 0 3px var(--warn-soft); }
+.event-log__dot--err  { background: var(--danger); box-shadow: 0 0 0 3px var(--danger-soft); }
+.event-log__source {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 1px 8px;
+}
+.event-log__message {
+  color: var(--text);
+  word-break: break-word;
+  line-height: 1.4;
+}
+.event-log__empty {
+  text-align: center;
+  padding: var(--s-7) var(--s-5);
+  color: var(--text-faint);
+  font-size: 0.88rem;
+}
+.event-log__truncated {
+  text-align: center;
+  font-size: 0.74rem;
+  color: var(--text-faint);
+  padding: var(--s-3);
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+/* uPlot host needs to be a positioning context for absolute marker labels */
+.uplot-host { position: relative; }
