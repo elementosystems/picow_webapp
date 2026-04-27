@@ -4,6 +4,7 @@ import Connection from './components/Connection'
 import Controls from './components/Controls'
 import Charts from './components/Charts'
 import ThemeToggle from './components/DarkModeToggle'
+import SerialConsole from './components/SerialConsole'
 
 export default function App() {
   return (
@@ -25,6 +26,13 @@ export default function App() {
         <Connection />
         <Controls />
         <Charts />
+        <details className="disclosure">
+          <summary>
+            Serial console
+            <span className="disclosure__hint">Diagnostics</span>
+          </summary>
+          <SerialConsole />
+        </details>
       </main>
 
       <footer className="footer">
