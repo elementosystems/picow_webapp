@@ -40,8 +40,37 @@ const args = parseArgs(process.argv.slice(2))
 const PORT = parseInt(args.port || process.env.SCPI_BRIDGE_PORT || '8765', 10)
 const BIND = args.bind || '127.0.0.1'
 
+// Maximum bytes we'll buffer for a single in-flight reply before aborting.
+// Protects against unterminated text replies and malformed binary blocks.
+const MAX_REPLY_BYTES = 32 * 1024 * 1024  // 32 MB
+
+// SECURITY: only accept WebSocket upgrades from origins on this allowlist.
+// Without this, any malicious page open in the user's browser could use the
+// bridge as an SSRF gateway to arbitrary host:port the script picks. Empty
+// `Origin` is allowed (CLI tools, curl) since the bridge already binds 127.0.0.1.
+const ALLOWED_ORIGIN_HOSTS = new Set([
+  '127.0.0.1', 'localhost', '[::1]', '0.0.0.0',
+])
+function isOriginAllowed(originHeader) {
+  if (!originHeader) return true  // no Origin header (non-browser)
+  // CLI envs sometimes send literal "null"
+  if (originHeader === 'null') return true
+  try {
+    const u = new URL(originHeader)
+    if (u.protocol === 'file:') return true
+    return ALLOWED_ORIGIN_HOSTS.has(u.hostname)
+  } catch {
+    return false
+  }
+}
+
 const httpServer = http.createServer((req, res) => {
   if (req.url === '/health') {
+    if (!isOriginAllowed(req.headers.origin)) {
+      res.writeHead(403, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ ok: false, error: 'origin not allowed' }))
+      return
+    }
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify({ ok: true, service: 'scpi-bridge', port: PORT }))
     return
@@ -50,7 +79,19 @@ const httpServer = http.createServer((req, res) => {
   res.end()
 })
 
-const wss = new WebSocketServer({ server: httpServer, path: '/ws' })
+const wss = new WebSocketServer({
+  server: httpServer,
+  path: '/ws',
+  verifyClient: (info, done) => {
+    const origin = info.req.headers.origin
+    if (!isOriginAllowed(origin)) {
+      console.warn(`[bridge] rejected upgrade from origin: ${origin}`)
+      done(false, 403, 'origin not allowed')
+      return
+    }
+    done(true)
+  },
+})
 
 wss.on('connection', (ws, req) => {
   console.log(`[bridge] client connected from ${req.socket.remoteAddress}`)
@@ -103,6 +144,13 @@ wss.on('connection', (ws, req) => {
 
   function handleData(chunk) {
     buffer = Buffer.concat([buffer, chunk])
+    // Bound the in-flight buffer. Either we got an unterminated text reply
+    // (no '\n') or a malformed/oversized binblock — abort instead of consuming
+    // unbounded memory.
+    if (buffer.length > MAX_REPLY_BYTES) {
+      abortPending(new Error(`reply exceeded ${MAX_REPLY_BYTES} bytes`))
+      return
+    }
     if (!pending) return
     if (pending.isBin) {
       const blk = parseBinBlock(buffer)

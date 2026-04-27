@@ -116,13 +116,18 @@ class ScopeService {
     this.host = String(host).trim()
     this.port = port
     await this._send({ op: 'connect', host: this.host, port })
-    // After connect, fetch IDN immediately for UI feedback.
+    // After connect, fetch IDN immediately for UI feedback. If the IDN query
+    // fails (timeout, malformed reply) we tear the TCP socket down so the
+    // bridge state and the client state stay in sync — otherwise the scope
+    // remains connected on the bridge while the UI shows "error".
     try {
       const idn = await this.query('*IDN?', 3000)
       this.idn = idn || ''
       return idn
     } catch (e) {
       this.idn = ''
+      try { await this._send({ op: 'disconnect' }) } catch {}
+      this.scopeConnected = false
       throw e
     }
   }
