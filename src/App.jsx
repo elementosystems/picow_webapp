@@ -3,6 +3,7 @@ import versionInfo from '../version.json'
 import Connection from './components/Connection'
 import Controls from './components/Controls'
 import Charts from './components/Charts'
+import ScopePanel from './components/ScopePanel'
 import ThemeToggle from './components/DarkModeToggle'
 
 export default function App() {
@@ -25,6 +26,7 @@ export default function App() {
         <Connection />
         <Controls />
         <Charts />
+        <ScopePanel />
       </main>
 
       <footer className="footer">

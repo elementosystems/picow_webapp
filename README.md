@@ -108,6 +108,32 @@ Note: The Docker image expects the production `dist/` folder to exist. Build the
   docker run -d -p 8080:80 picow_webapp
   ```
   Then open http://localhost:8080 (or the appropriate host/port) to view the app.
+## Oscilloscope (Siglent / SCPI)
+
+The app includes a Scope panel that talks to any SCPI-1999 / IEEE-488.2 network
+instrument over its LAN port (raw socket on TCP:5025 by default — Siglent
+SDS1000X-E, SDS2000X+, SDS1000X-HD, etc.).
+
+Browsers cannot open raw TCP sockets, so a tiny local bridge is included that
+translates `ws://localhost:8765/ws` to TCP:5025.
+
+Start it in a second terminal:
+
+```bash
+npm run bridge
+```
+
+Then in the app: enter the scope's IPv4 (or hostname) and click **Connect**.
+The bridge binds to `127.0.0.1` only — it is not exposed on your network.
+
+Features:
+- Connect by IPv4 / hostname; identification (`*IDN?`) shown after handshake
+- Channel / timebase / trigger controls map to standard SCPI commands
+- Live measurements (Vpp, Vavg, Vrms, Freq, Period, …) polled at user-set rate
+- Data logger that records measurements to a buffer; export as CSV or JSON
+- Raw SCPI console with per-line history and arrow rendering
+- Settings (host, port, bridge URL, polling rate, enabled metrics) persist to localStorage
+
 ## Additional Information
 
 For more details, refer to in-code comments within index.html and application.js.

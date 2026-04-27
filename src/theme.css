@@ -740,6 +740,221 @@ p { margin: 0; }
 .btn.is-paused { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 50%, var(--border)); }
 
 /* --------------------------------------------------------------------------
+   Scope panel — Siglent / SCPI network instrument
+   -------------------------------------------------------------------------- */
+.scope__idn {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  margin-left: var(--s-3);
+  padding: 2px 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  max-width: 36ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scope__connect {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  align-items: flex-end;
+  padding-bottom: var(--s-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.scope__error {
+  width: 100%;
+  font-size: 0.82rem;
+  color: var(--danger);
+  background: var(--danger-soft);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--border));
+}
+.scope__hint {
+  width: 100%;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border: 1px dashed var(--border);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--radius-md);
+  margin-top: var(--s-2);
+}
+.scope__hint code {
+  font-family: var(--font-mono);
+  background: var(--surface-3);
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+.scope__section {
+  border-top: 1px solid var(--border);
+}
+.scope__section:first-of-type { border-top: 0; }
+.scope__section-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-5);
+  background: linear-gradient(180deg, var(--surface-2), transparent);
+}
+.scope__section-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  background: transparent;
+  border: 0;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: var(--radius-md);
+}
+.scope__section-toggle:hover { background: var(--surface-3); color: var(--text); }
+.scope__section-right { margin-left: auto; }
+.scope__section-body { padding: var(--s-3) var(--s-5) var(--s-5); }
+
+.scope__row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--s-3);
+}
+.scope__group {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--s-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.scope__group-title {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: var(--s-1);
+}
+.scope__btns { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.scope__inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  align-items: flex-end;
+}
+
+.scope__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--s-2);
+}
+.scope__metric {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  padding: var(--s-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+.scope__metric:hover { border-color: var(--border-strong); }
+.scope__metric.is-enabled {
+  background: var(--surface-1);
+  border-color: var(--accent-ring);
+  box-shadow: 0 0 0 1px var(--accent-ring);
+  color: var(--text);
+}
+.scope__metric-label {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.scope__metric.is-enabled .scope__metric-label { color: var(--accent-strong); }
+.scope__metric-value {
+  font-family: var(--font-mono);
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.scope__metric-value em {
+  font-style: normal;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.scope__logger {
+  align-items: center;
+  flex-wrap: wrap;
+}
+.scope__counter {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+}
+
+.scope__raw {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.scope__raw-history {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  height: 200px;
+  overflow-y: auto;
+  padding: var(--s-3);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+.scope__raw-row {
+  display: grid;
+  grid-template-columns: 80px 16px 1fr;
+  gap: var(--s-2);
+  align-items: baseline;
+  padding: 1px 0;
+}
+.scope__raw-row.is-faint { opacity: 0.55; }
+.scope__raw-ts { color: var(--text-faint); }
+.scope__raw-arrow { font-weight: 600; }
+.scope__raw-text { color: var(--text); white-space: pre-wrap; word-break: break-all; }
+.scope__raw-row--send .scope__raw-arrow { color: var(--info); }
+.scope__raw-row--recv .scope__raw-arrow { color: var(--accent-strong); }
+.scope__raw-row--err  .scope__raw-arrow,
+.scope__raw-row--err  .scope__raw-text { color: var(--danger); }
+.scope__raw-form {
+  display: flex;
+  gap: var(--s-2);
+  align-items: stretch;
+}
+.scope__raw-form .field__input { font-family: var(--font-mono); }
+
+/* --------------------------------------------------------------------------
    Chart settings strip
    -------------------------------------------------------------------------- */
 .settings-bar {
