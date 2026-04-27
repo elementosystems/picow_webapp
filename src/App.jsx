@@ -3,6 +3,7 @@ import versionInfo from '../version.json'
 import Connection from './components/Connection'
 import Controls from './components/Controls'
 import Charts from './components/Charts'
+import EventLog from './components/EventLog'
 import ThemeToggle from './components/DarkModeToggle'
 
 export default function App() {
@@ -25,6 +26,7 @@ export default function App() {
         <Connection />
         <Controls />
         <Charts />
+        <EventLog />
       </main>
 
       <footer className="footer">

@@ -22,16 +22,19 @@ function fmtNumber(v, digits) {
 }
 
 /**
- * series: [{ label, color, unit, precision }]
- * data:   [xs, ys1, ys2, ...]   (xs in unix seconds)
- * height: chart pixel height
- * yRanges: optional {min, max} per series, else auto
+ * series:  [{ label, color, unit, precision }]
+ * data:    [xs, ys1, ys2, ...]   (xs in unix seconds)
+ * height:  chart pixel height
+ * markers: [{ ts (unix seconds), label?, color? }] — vertical dashed lines
+ *          drawn on the canvas via the uPlot draw hook.
  */
-export default function TelemetryChart({ series, data, height = 220, dualAxis = false }) {
+export default function TelemetryChart({ series, data, height = 220, dualAxis = false, markers = [] }) {
   const containerRef = useRef(null)
   const plotRef = useRef(null)
   const seriesRef = useRef(series)
   seriesRef.current = series
+  const markersRef = useRef(markers)
+  markersRef.current = markers
 
   // Build options
   function buildOptions(width) {
@@ -47,6 +50,41 @@ export default function TelemetryChart({ series, data, height = 220, dualAxis = 
       height,
       padding: [12, 8, 6, 8],
       legend: { show: false },
+      hooks: {
+        draw: [
+          (u) => {
+            const list = markersRef.current
+            if (!list || list.length === 0) return
+            const ctx = u.ctx
+            const { left, top, width: plotW, height: plotH } = u.bbox
+            const fallbackColor = t.text || '#888'
+            ctx.save()
+            ctx.lineWidth = 1
+            ctx.setLineDash([4, 3])
+            ctx.font = '10px ui-monospace, Menlo, Consolas, monospace'
+            ctx.textBaseline = 'top'
+            for (const m of list) {
+              const xPos = u.valToPos(m.ts, 'x', true)
+              if (xPos == null || xPos < left || xPos > left + plotW) continue
+              ctx.strokeStyle = m.color || fallbackColor
+              ctx.beginPath()
+              ctx.moveTo(xPos + 0.5, top)
+              ctx.lineTo(xPos + 0.5, top + plotH)
+              ctx.stroke()
+              if (m.label) {
+                ctx.setLineDash([])
+                ctx.fillStyle = m.color || fallbackColor
+                const text = String(m.label)
+                const maxLen = 22
+                const display = text.length > maxLen ? text.slice(0, maxLen - 1) + '…' : text
+                ctx.fillText(display, xPos + 3, top + 2)
+                ctx.setLineDash([4, 3])
+              }
+            }
+            ctx.restore()
+          },
+        ],
+      },
       cursor: {
         drag: { x: true, y: false },
         points: { size: 7, fill: t.surface, stroke: undefined },
@@ -86,9 +124,13 @@ export default function TelemetryChart({ series, data, height = 220, dualAxis = 
     return cfg
   }
 
-  // Mount plot
+  // Mount plot. Defer creation until the first non-empty data set arrives —
+  // uPlot's drawAxesGrid throws when axes are drawn with zero-length data, and
+  // a failed initial paint also stops our marker draw-hook from running.
   useLayoutEffect(() => {
     if (!containerRef.current) return
+    if (plotRef.current) return
+    if (!data || !data[0] || data[0].length === 0) return
     const width = containerRef.current.clientWidth
     const cfg = buildOptions(width)
     plotRef.current = new uPlot(cfg, data, containerRef.current)
@@ -98,8 +140,15 @@ export default function TelemetryChart({ series, data, height = 220, dualAxis = 
         plotRef.current = null
       }
     }
-    // Series structure changes are handled by destroy + remount via key prop in parent.
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data])
+
+  // Cleanup on unmount even if mount was deferred.
+  useEffect(() => () => {
+    if (plotRef.current) {
+      plotRef.current.destroy()
+      plotRef.current = null
+    }
   }, [])
 
   // Update data on prop change
@@ -108,6 +157,11 @@ export default function TelemetryChart({ series, data, height = 220, dualAxis = 
       plotRef.current.setData(data, true)
     }
   }, [data])
+
+  // Trigger a redraw when markers change so the draw hook re-runs
+  useEffect(() => {
+    if (plotRef.current) plotRef.current.redraw(false, false)
+  }, [markers])
 
   // Resize observer for responsive width
   useEffect(() => {
