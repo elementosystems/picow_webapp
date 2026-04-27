@@ -71,7 +71,15 @@ class PortWrapper {
     port: null,
     telemetryCb: null,
     connectionCbs: [],
+    rawListeners: [],
     textDecoder: new TextDecoder(),
+
+    _fireRaw(frame) {
+      for (let i = 0; i < this.rawListeners.length; i++) {
+        const cb = this.rawListeners[i]
+        try { cb(frame) } catch (e) { /* swallow listener errors */ }
+      }
+    },
 
     requestPort() {
       const filters = [{ vendorId: 0xcafe }]
@@ -88,6 +96,14 @@ class PortWrapper {
         this.connectionCbs.forEach(cb => { try { cb(true) } catch (e) {} })
         // wire up receive handling
         this.port.onReceive = (dataView) => {
+          // Fire raw listeners FIRST so they see every USB IN packet, even if
+          // the text decoder/telemetry parser later throws.
+          try {
+            const bytes = new Uint8Array(dataView.buffer.slice(dataView.byteOffset, dataView.byteOffset + dataView.byteLength))
+            this._fireRaw({ dir: 'rx', data: bytes, time: new Date() })
+          } catch (rawErr) {
+            console.error('Raw listener dispatch error', rawErr)
+          }
           try {
             const text = this.textDecoder.decode(dataView.buffer || dataView)
             // parse telemetry lines like "Current: -0.007 A" or "Voltage: 5.02 V"
@@ -130,12 +146,27 @@ class PortWrapper {
       const cmd = CMD[name]
       if (!cmd) return console.error('Unknown gpio', name)
       const bytes = new Uint8Array([cmd, onOffState])
+      this._fireRaw({ dir: 'tx', data: bytes, time: new Date() })
       this.port.send(bytes).catch(err => console.error('Send error', err))
+    },
+
+    sendRaw(bytes) {
+      if (!this.port) {
+        console.warn('Not connected')
+        return Promise.resolve()
+      }
+      if (!(bytes instanceof Uint8Array)) {
+        return Promise.reject(new Error('sendRaw requires a Uint8Array'))
+      }
+      this._fireRaw({ dir: 'tx', data: bytes, time: new Date() })
+      return this.port.send(bytes)
     },
 
     setOnTelemetry(cb) { this.telemetryCb = cb },
     addOnConnectionChange(cb) { if (typeof cb === 'function') this.connectionCbs.push(cb) },
     removeOnConnectionChange(cb) { this.connectionCbs = this.connectionCbs.filter(fn => fn !== cb) },
+    addRawListener(cb) { if (typeof cb === 'function') this.rawListeners.push(cb) },
+    removeRawListener(cb) { this.rawListeners = this.rawListeners.filter(fn => fn !== cb) },
     isConnected() { return !!this.port }
   }
 
