@@ -22,16 +22,24 @@ function fmtNumber(v, digits) {
 }
 
 /**
- * series: [{ label, color, unit, precision }]
- * data:   [xs, ys1, ys2, ...]   (xs in unix seconds)
- * height: chart pixel height
- * yRanges: optional {min, max} per series, else auto
+ * series:     [{ label, color, unit, precision }]
+ * data:       [xs, ys1, ys2, ...]   (xs in unix seconds)
+ * height:     chart pixel height
+ * dualAxis:   if true, each series gets its own y scale (`y0`, `y1`, ...)
+ * thresholds: optional array of `{ scale, value, color }` — drawn as dashed
+ *             horizontal lines at the given y-value on the given scale.
+ *             For single-axis charts, scale is "y". For dualAxis, use "y0" / "y1".
  */
-export default function TelemetryChart({ series, data, height = 220, dualAxis = false }) {
+export default function TelemetryChart({ series, data, height = 220, dualAxis = false, thresholds = [] }) {
   const containerRef = useRef(null)
   const plotRef = useRef(null)
   const seriesRef = useRef(series)
   seriesRef.current = series
+
+  // Keep latest thresholds in a ref so the draw hook (which closes over it once
+  // at chart construction) always sees the current value without forcing a remount.
+  const thresholdsRef = useRef(thresholds)
+  thresholdsRef.current = thresholds
 
   // Build options
   function buildOptions(width) {
@@ -82,6 +90,37 @@ export default function TelemetryChart({ series, data, height = 220, dualAxis = 
               values: (_, ticks) => ticks.map(v => fmtNumber(v, series[0]?.precision ?? 2)),
             }]),
       ],
+      hooks: {
+        // Run after series strokes — draws dashed horizontal threshold lines on
+        // top of the series. We pull from the ref so prop updates are reflected
+        // without a remount.
+        draw: [
+          (u) => {
+            const lines = thresholdsRef.current
+            if (!lines || !lines.length) return
+            const ctx = u.ctx
+            const { left, top, width: plotW, height: plotH } = u.bbox
+            ctx.save()
+            ctx.lineWidth = 1
+            ctx.setLineDash([4, 4])
+            for (const line of lines) {
+              if (!line || typeof line.value !== 'number' || Number.isNaN(line.value)) continue
+              const scaleKey = line.scale || (dualAxis ? 'y0' : 'y')
+              const scale = u.scales[scaleKey]
+              if (!scale || scale.min == null || scale.max == null) continue
+              const y = u.valToPos(line.value, scaleKey, true)
+              if (!Number.isFinite(y)) continue
+              if (y < top || y > top + plotH) continue
+              ctx.strokeStyle = line.color || 'rgba(255,255,255,0.4)'
+              ctx.beginPath()
+              ctx.moveTo(left, y)
+              ctx.lineTo(left + plotW, y)
+              ctx.stroke()
+            }
+            ctx.restore()
+          },
+        ],
+      },
     }
     return cfg
   }
@@ -108,6 +147,14 @@ export default function TelemetryChart({ series, data, height = 220, dualAxis = 
       plotRef.current.setData(data, true)
     }
   }, [data])
+
+  // Threshold prop changes don't require a remount — they're read from the ref
+  // by the draw hook — but we do need to repaint so the new lines show up.
+  useEffect(() => {
+    if (plotRef.current) {
+      plotRef.current.redraw(false, false)
+    }
+  }, [thresholds])
 
   // Resize observer for responsive width
   useEffect(() => {

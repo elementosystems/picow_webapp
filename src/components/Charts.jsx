@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import serialService from '../services/serialService'
 import TelemetryChart from './TelemetryChart'
+import { load, save, isBreach, SETTINGS_KEYS } from '../services/settings'
 
 const RANGE_PRESETS = [
   { label: '30s', seconds: 30 },
@@ -13,6 +14,28 @@ const VIEW_MODES = [
   { id: 'split', label: 'Split' },
   { id: 'combined', label: 'Combined' },
 ]
+
+const DEFAULT_THRESHOLDS = {
+  currentMin: null,
+  currentMax: null,
+  voltageMin: null,
+  voltageMax: null,
+}
+
+// Sanitize a value loaded from localStorage so we don't blow up on bad shapes.
+function normalizeThresholds(value) {
+  if (!value || typeof value !== 'object') return { ...DEFAULT_THRESHOLDS }
+  const pick = (k) => {
+    const v = value[k]
+    return typeof v === 'number' && !Number.isNaN(v) ? v : null
+  }
+  return {
+    currentMin: pick('currentMin'),
+    currentMax: pick('currentMax'),
+    voltageMin: pick('voltageMin'),
+    voltageMax: pick('voltageMax'),
+  }
+}
 
 function readVar(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
@@ -27,6 +50,42 @@ function fmt(v, digits = 3) {
 function fmtTime(ts) {
   if (!ts) return ''
   return new Date(ts).toLocaleTimeString()
+}
+
+function fmtThreshold(v) {
+  return v === null || v === undefined ? '' : v
+}
+
+// Convert a hex/rgb color to a translucent rgba string for threshold lines.
+// uPlot draws via canvas so we can pass any valid CSS color.
+function withAlpha(color, alpha) {
+  if (!color) return `rgba(255,255,255,${alpha})`
+  const hex = color.trim()
+  // #rgb or #rrggbb
+  if (hex.startsWith('#')) {
+    let r, g, b
+    if (hex.length === 4) {
+      r = parseInt(hex[1] + hex[1], 16)
+      g = parseInt(hex[2] + hex[2], 16)
+      b = parseInt(hex[3] + hex[3], 16)
+    } else if (hex.length === 7) {
+      r = parseInt(hex.slice(1, 3), 16)
+      g = parseInt(hex.slice(3, 5), 16)
+      b = parseInt(hex.slice(5, 7), 16)
+    } else {
+      return color
+    }
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`
+  }
+  // Assume already an rgb(...) — rough conversion.
+  const m = hex.match(/^rgba?\(([^)]+)\)$/i)
+  if (m) {
+    const parts = m[1].split(',').map(s => s.trim())
+    if (parts.length >= 3) {
+      return `rgba(${parts[0]}, ${parts[1]}, ${parts[2]}, ${alpha})`
+    }
+  }
+  return color
 }
 
 function computeStats(values) {
@@ -84,20 +143,28 @@ const DownloadIcon = (
   </svg>
 )
 
-const ResetIcon = (
-  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
-    <path d="M3 8a5 5 0 1 0 1.6-3.6" />
-    <path d="M3 3v3h3" />
-  </svg>
-)
-
 export default function Charts() {
   const [connected, setConnected] = useState(serialService.isConnected())
-  const [showDemo, setShowDemo] = useState(false)
-  const [paused, setPaused] = useState(false)
-  const [viewMode, setViewMode] = useState('split')
-  const [windowSec, setWindowSec] = useState(60)
+  // Persisted UI settings — initialize from localStorage so they survive reloads.
+  const [showDemo, setShowDemo] = useState(() => !!load(SETTINGS_KEYS.showDemo, false))
+  const [paused, setPaused] = useState(false) // intentionally NOT persisted
+  const [viewMode, setViewMode] = useState(() => {
+    const v = load(SETTINGS_KEYS.viewMode, 'split')
+    return (v === 'split' || v === 'combined') ? v : 'split'
+  })
+  const [windowSec, setWindowSec] = useState(() => {
+    const v = Number(load(SETTINGS_KEYS.windowSec, 60))
+    return Number.isFinite(v) && v > 0 ? v : 60
+  })
+  const [thresholds, setThresholds] = useState(() => normalizeThresholds(load(SETTINGS_KEYS.thresholds, DEFAULT_THRESHOLDS)))
+
   const [tick, setTick] = useState(0) // forces re-render of charts on new data
+
+  // Persist settings whenever they change.
+  useEffect(() => { save(SETTINGS_KEYS.windowSec, windowSec) }, [windowSec])
+  useEffect(() => { save(SETTINGS_KEYS.viewMode, viewMode) }, [viewMode])
+  useEffect(() => { save(SETTINGS_KEYS.showDemo, showDemo) }, [showDemo])
+  useEffect(() => { save(SETTINGS_KEYS.thresholds, thresholds) }, [thresholds])
 
   // Single source of truth — parallel arrays for streaming
   const tsRef = useRef([])           // unix seconds
@@ -213,6 +280,35 @@ export default function Charts() {
 
   const lastUpdate = view.ts.length ? view.ts[view.ts.length - 1] * 1000 : null
 
+  // ---- Breach detection (latest values) ---------------------------------
+  const currentBreach = isBreach(stats.current.last, thresholds.currentMin, thresholds.currentMax)
+  const voltageBreach = isBreach(stats.voltage.last, thresholds.voltageMin, thresholds.voltageMax)
+
+  // Edge-triggered console.warn so the operator sees breach transitions without
+  // spamming the console for every sample. Depends only on the boolean breach
+  // states — the warn fires at the rising edge of either breach.
+  const prevBreachRef = useRef({ current: false, voltage: false })
+  // Latest values are read from a ref to avoid widening the effect's deps.
+  const latestForBreachRef = useRef({ current: null, voltage: null })
+  latestForBreachRef.current = { current: stats.current.last, voltage: stats.voltage.last }
+  const thresholdsForBreachRef = useRef(thresholds)
+  thresholdsForBreachRef.current = thresholds
+  useEffect(() => {
+    if (currentBreach && !prevBreachRef.current.current) {
+      const t = thresholdsForBreachRef.current
+      console.warn(
+        `[picow] current breach: ${latestForBreachRef.current.current} A outside [${t.currentMin}, ${t.currentMax}]`,
+      )
+    }
+    if (voltageBreach && !prevBreachRef.current.voltage) {
+      const t = thresholdsForBreachRef.current
+      console.warn(
+        `[picow] voltage breach: ${latestForBreachRef.current.voltage} V outside [${t.voltageMin}, ${t.voltageMax}]`,
+      )
+    }
+    prevBreachRef.current = { current: currentBreach, voltage: voltageBreach }
+  }, [currentBreach, voltageBreach])
+
   // Series colors via CSS variables (read once per render — re-themes when MutationObserver in TelemetryChart fires)
   const colors = {
     current: readVar('--data-current') || '#ff6e7a',
@@ -225,6 +321,45 @@ export default function Charts() {
     { label: 'Current', color: colors.current, unit: 'A', precision: 4 },
     { label: 'Voltage', color: colors.voltage, unit: 'V', precision: 2 },
   ]
+
+  // Build threshold line specs for each chart variant. Lines without a value
+  // (null) are filtered by TelemetryChart's draw hook automatically, but we
+  // omit them here too to keep the prop tidy.
+  const currentLineColor = withAlpha(colors.current, 0.55)
+  const voltageLineColor = withAlpha(colors.voltage, 0.55)
+
+  const currentChartThresholds = useMemo(() => {
+    const arr = []
+    if (typeof thresholds.currentMin === 'number') arr.push({ scale: 'y', value: thresholds.currentMin, color: currentLineColor })
+    if (typeof thresholds.currentMax === 'number') arr.push({ scale: 'y', value: thresholds.currentMax, color: currentLineColor })
+    return arr
+  }, [thresholds.currentMin, thresholds.currentMax, currentLineColor])
+
+  const voltageChartThresholds = useMemo(() => {
+    const arr = []
+    if (typeof thresholds.voltageMin === 'number') arr.push({ scale: 'y', value: thresholds.voltageMin, color: voltageLineColor })
+    if (typeof thresholds.voltageMax === 'number') arr.push({ scale: 'y', value: thresholds.voltageMax, color: voltageLineColor })
+    return arr
+  }, [thresholds.voltageMin, thresholds.voltageMax, voltageLineColor])
+
+  // Combined view: current on y0, voltage on y1.
+  const combinedChartThresholds = useMemo(() => {
+    const arr = []
+    if (typeof thresholds.currentMin === 'number') arr.push({ scale: 'y0', value: thresholds.currentMin, color: currentLineColor })
+    if (typeof thresholds.currentMax === 'number') arr.push({ scale: 'y0', value: thresholds.currentMax, color: currentLineColor })
+    if (typeof thresholds.voltageMin === 'number') arr.push({ scale: 'y1', value: thresholds.voltageMin, color: voltageLineColor })
+    if (typeof thresholds.voltageMax === 'number') arr.push({ scale: 'y1', value: thresholds.voltageMax, color: voltageLineColor })
+    return arr
+  }, [thresholds, currentLineColor, voltageLineColor])
+
+  // ---- Threshold input handlers -----------------------------------------
+  const onThresholdChange = (key) => (e) => {
+    const raw = e.target.value
+    setThresholds(prev => ({
+      ...prev,
+      [key]: raw === '' ? null : (Number.isNaN(parseFloat(raw)) ? null : parseFloat(raw)),
+    }))
+  }
 
   if (!active) {
     return (
@@ -316,10 +451,68 @@ export default function Charts() {
         </div>
       </section>
 
+      {/* Thresholds — compact card just below the toolbar. Uses the
+          existing settings-bar / field tokens for visual consistency. */}
+      <section className="settings-bar thresholds-bar" aria-label="Thresholds">
+        <span className="thresholds-bar__title">Thresholds</span>
+        <label className="field thresholds-bar__field thresholds-bar__field--current">
+          <span className="field__label">Current min (A)</span>
+          <input
+            className="field__input"
+            type="number"
+            step="0.001"
+            inputMode="decimal"
+            placeholder="—"
+            value={fmtThreshold(thresholds.currentMin)}
+            onChange={onThresholdChange('currentMin')}
+            data-testid="threshold-current-min"
+          />
+        </label>
+        <label className="field thresholds-bar__field thresholds-bar__field--current">
+          <span className="field__label">Current max (A)</span>
+          <input
+            className="field__input"
+            type="number"
+            step="0.001"
+            inputMode="decimal"
+            placeholder="—"
+            value={fmtThreshold(thresholds.currentMax)}
+            onChange={onThresholdChange('currentMax')}
+            data-testid="threshold-current-max"
+          />
+        </label>
+        <label className="field thresholds-bar__field thresholds-bar__field--voltage">
+          <span className="field__label">Voltage min (V)</span>
+          <input
+            className="field__input"
+            type="number"
+            step="0.01"
+            inputMode="decimal"
+            placeholder="—"
+            value={fmtThreshold(thresholds.voltageMin)}
+            onChange={onThresholdChange('voltageMin')}
+            data-testid="threshold-voltage-min"
+          />
+        </label>
+        <label className="field thresholds-bar__field thresholds-bar__field--voltage">
+          <span className="field__label">Voltage max (V)</span>
+          <input
+            className="field__input"
+            type="number"
+            step="0.01"
+            inputMode="decimal"
+            placeholder="—"
+            value={fmtThreshold(thresholds.voltageMax)}
+            onChange={onThresholdChange('voltageMax')}
+            data-testid="threshold-voltage-max"
+          />
+        </label>
+      </section>
+
       {/* Stats grid */}
       <section className="stats-grid" aria-label="Telemetry statistics">
-        <StatCard variant="current" label="Current" unit="A" digits={4} stats={stats.current} />
-        <StatCard variant="voltage" label="Voltage" unit="V" digits={2} stats={stats.voltage} />
+        <StatCard variant="current" label="Current" unit="A" digits={4} stats={stats.current} alert={currentBreach} />
+        <StatCard variant="voltage" label="Voltage" unit="V" digits={2} stats={stats.voltage} alert={voltageBreach} />
       </section>
 
       {/* Charts */}
@@ -331,6 +524,7 @@ export default function Charts() {
               series={currentSeries}
               data={splitData(view.cur)}
               height={220}
+              thresholds={currentChartThresholds}
             />
           </ChartCard>
           <ChartCard title="Voltage" eyebrow="V" colorVar="--data-voltage" rangeLabel={`${windowSec}s`}>
@@ -339,6 +533,7 @@ export default function Charts() {
               series={voltageSeries}
               data={splitData(view.vol)}
               height={220}
+              thresholds={voltageChartThresholds}
             />
           </ChartCard>
         </section>
@@ -351,6 +546,7 @@ export default function Charts() {
               data={combinedData}
               height={300}
               dualAxis
+              thresholds={combinedChartThresholds}
             />
           </ChartCard>
         </section>
@@ -359,12 +555,14 @@ export default function Charts() {
   )
 }
 
-function StatCard({ variant, label, unit, digits, stats }) {
+function StatCard({ variant, label, unit, digits, stats, alert }) {
   return (
-    <div className={`metric metric--${variant}`}>
+    <div className={`metric metric--${variant}${alert ? ' metric--alert' : ''}`} data-testid={`metric-${variant}`}>
       <div className="metric__label">
         <span>{label}</span>
-        <span className="metric__chip">{unit}</span>
+        {alert
+          ? <span className="metric__chip metric__chip--alert" data-testid={`alert-${variant}`}>ALERT</span>
+          : <span className="metric__chip">{unit}</span>}
       </div>
       <div className="metric__value">
         <span>{fmt(stats.last, digits)}</span>

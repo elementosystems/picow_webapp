@@ -556,6 +556,14 @@ p { margin: 0; }
 .metric--current { --metric-color: var(--data-current); }
 .metric--voltage { --metric-color: var(--data-voltage); }
 
+/* Alert state — taken when the latest value is outside its configured range. */
+.metric--alert {
+  --metric-color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 55%, var(--border));
+  background: linear-gradient(180deg, var(--danger-soft), var(--surface-1) 60%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--danger) 30%, transparent);
+}
+
 .metric__label {
   display: flex;
   align-items: center;
@@ -576,6 +584,16 @@ p { margin: 0; }
   font-size: 0.66rem;
   font-weight: 600;
   letter-spacing: 0.08em;
+}
+.metric__chip--alert {
+  background: var(--danger);
+  color: #2a0a0e;
+  letter-spacing: 0.16em;
+  animation: alert-pulse 1.6s var(--ease) infinite;
+}
+@keyframes alert-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 60%, transparent); }
+  50%      { box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger) 0%, transparent); }
 }
 .metric__value {
   display: flex;
@@ -1005,6 +1023,37 @@ p { margin: 0; }
 }
 .field--check input { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
 .field--check .field__label { font-family: var(--font-sans); font-size: 0.85rem; letter-spacing: 0; text-transform: none; color: var(--text-muted); }
+
+/* --------------------------------------------------------------------------
+   Thresholds bar (uses the .settings-bar container; adds a title + tinted
+   per-metric input borders so the colour mapping is obvious at a glance).
+   -------------------------------------------------------------------------- */
+.thresholds-bar { padding: var(--s-3) var(--s-5); }
+.thresholds-bar__title {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  align-self: center;
+  margin-right: var(--s-2);
+}
+.thresholds-bar__field .field__input {
+  width: 120px;
+  border-left-width: 3px;
+  border-left-style: solid;
+}
+.thresholds-bar__field--current .field__input {
+  border-left-color: var(--data-current);
+}
+.thresholds-bar__field--voltage .field__input {
+  border-left-color: var(--data-voltage);
+}
+.thresholds-bar__field--current .field__input:focus,
+.thresholds-bar__field--voltage .field__input:focus {
+  /* Keep the metric tint visible on focus instead of the default accent border. */
+  border-color: var(--accent);
+}
 
 /* --------------------------------------------------------------------------
    Empty state
