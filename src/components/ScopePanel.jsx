@@ -21,15 +21,17 @@ function saveLs(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)) } catch {}
 }
 
+// Siglent firmware uses modern names in `:MEAS:SCAL?` and legacy names in `Cn:PAVA?`.
+// id is canonical (also used as the localStorage key); modern + legacy carry the SCPI mnemonic per dialect.
 const MEASUREMENTS = [
-  { id: 'PKPK', label: 'V pp',   unit: 'V', precision: 4 },
-  { id: 'MEAN', label: 'V avg',  unit: 'V', precision: 4 },
-  { id: 'RMS',  label: 'V rms',  unit: 'V', precision: 4 },
-  { id: 'AMPL', label: 'V amp',  unit: 'V', precision: 4 },
-  { id: 'MAX',  label: 'V max',  unit: 'V', precision: 4 },
-  { id: 'MIN',  label: 'V min',  unit: 'V', precision: 4 },
-  { id: 'FREQ', label: 'Freq',   unit: 'Hz', precision: 3 },
-  { id: 'PER',  label: 'Period', unit: 's', precision: 6 },
+  { id: 'PKPK', modern: 'VPP',  legacy: 'PKPK', label: 'V pp',   unit: 'V',  precision: 4 },
+  { id: 'MEAN', modern: 'VAVG', legacy: 'MEAN', label: 'V avg',  unit: 'V',  precision: 4 },
+  { id: 'RMS',  modern: 'VRMS', legacy: 'RMS',  label: 'V rms',  unit: 'V',  precision: 4 },
+  { id: 'AMPL', modern: 'VAMP', legacy: 'AMPL', label: 'V amp',  unit: 'V',  precision: 4 },
+  { id: 'MAX',  modern: 'VMAX', legacy: 'MAX',  label: 'V max',  unit: 'V',  precision: 4 },
+  { id: 'MIN',  modern: 'VMIN', legacy: 'MIN',  label: 'V min',  unit: 'V',  precision: 4 },
+  { id: 'FREQ', modern: 'FREQ', legacy: 'FREQ', label: 'Freq',   unit: 'Hz', precision: 3 },
+  { id: 'PER',  modern: 'PER',  legacy: 'PER',  label: 'Period', unit: 's',  precision: 6 },
 ]
 
 const CHANNELS = ['CH1', 'CH2', 'CH3', 'CH4']
@@ -156,11 +158,11 @@ export default function ScopePanel() {
           // Modern SCPI form first; falls back to legacy if it fails.
           let v
           try {
-            v = await scopeService.queryNumber(`MEAS:SCAL? ${metricChannel}, ${m.id}`, 1500)
+            v = await scopeService.queryNumber(`MEAS:SCAL? ${metricChannel}, ${m.modern}`, 1500)
           } catch {
             // Legacy Siglent SDS1000X (PAVA): "C1:PAVA? PKPK" → "C1:PAVA PKPK,3.43E-01V"
             const cnum = metricChannel.replace('CH', 'C')
-            const text = await scopeService.query(`${cnum}:PAVA? ${m.id}`, 1500)
+            const text = await scopeService.query(`${cnum}:PAVA? ${m.legacy}`, 1500)
             const match = String(text).match(/[-+]?\d+(\.\d+)?([eE][-+]?\d+)?/)
             v = match ? parseFloat(match[0]) : NaN
           }

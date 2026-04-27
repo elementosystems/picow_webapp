@@ -126,6 +126,18 @@ npm run bridge
 Then in the app: enter the scope's IPv4 (or hostname) and click **Connect**.
 The bridge binds to `127.0.0.1` only — it is not exposed on your network.
 
+### Test without hardware
+
+A simulated Siglent SDS1104X-E ships in this repo. In a third terminal:
+
+```bash
+npm run mock-scope
+```
+
+It listens on `127.0.0.1:5025` and returns realistic measurements driven by a
+slowly-drifting sine wave. Then in the app, host = `127.0.0.1`, port = `5025`,
+click Connect — full pipeline (UI ↔ bridge ↔ mock scope) without a real device.
+
 Features:
 - Connect by IPv4 / hostname; identification (`*IDN?`) shown after handshake
 - Channel / timebase / trigger controls map to standard SCPI commands
