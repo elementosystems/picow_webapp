@@ -198,9 +198,25 @@ export default function Charts() {
   useEffect(() => {
     function ingest(item) {
       const tMs = item.time instanceof Date ? item.time.getTime() : Number(item.time)
-      if (!tMs || tMs === lastTsMsRef.current) return
-      lastTsMsRef.current = tMs
+      if (!tMs) return
       const tSec = Math.floor(tMs / 1000)
+      // The firmware emits "Current: ..." and "Voltage: ..." on separate lines
+      // but in the same USB packet, so serialService fires two telemetry
+      // callbacks sharing the same `time`. Merge same-timestamp updates into
+      // the most-recent row instead of dropping them — otherwise whichever
+      // stream arrives second is lost forever.
+      if (tMs === lastTsMsRef.current && tsRef.current.length > 0) {
+        const i = tsRef.current.length - 1
+        if (typeof item.current === 'number' && Number.isNaN(curRef.current[i])) {
+          curRef.current[i] = item.current
+        }
+        if (typeof item.voltage === 'number' && Number.isNaN(volRef.current[i])) {
+          volRef.current[i] = item.voltage
+        }
+        setTick(n => n + 1)
+        return
+      }
+      lastTsMsRef.current = tMs
       tsRef.current.push(tSec)
       curRef.current.push(typeof item.current === 'number' ? item.current : NaN)
       volRef.current.push(typeof item.voltage === 'number' ? item.voltage : NaN)
