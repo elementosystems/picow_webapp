@@ -95,7 +95,8 @@ const wss = new WebSocketServer({
 
 wss.on('connection', (ws, req) => {
   console.log(`[bridge] client connected from ${req.socket.remoteAddress}`)
-  let scope = null            // net.Socket | null
+  let scope = null            // net.Socket | null — fully connected scope socket
+  let pendingScope = null     // net.Socket | null — in-flight TCP connect (not yet 'connect'-ed)
   let buffer = Buffer.alloc(0)
   let pending = null          // { id, isBin, timer }
 
@@ -127,6 +128,23 @@ wss.on('connection', (ws, req) => {
     }
     abortPending(new Error(reason || 'disconnected'))
     emitStatus('disconnected', reason)
+  }
+
+  // Drop any in-flight pre-connect socket without emitting status. We still
+  // owe a response to the original `connect` op's id — otherwise the client's
+  // promise hangs forever.
+  function abandonPendingScope(reason) {
+    if (!pendingScope) return
+    const { sock: orphan, id: orphanId } = pendingScope
+    pendingScope = null
+    orphan.removeAllListeners('connect')
+    orphan.removeAllListeners('data')
+    orphan.removeAllListeners('error')
+    orphan.removeAllListeners('close')
+    try { orphan.destroy() } catch {}
+    if (orphanId != null) {
+      send({ id: orphanId, ok: false, error: reason || 'superseded' })
+    }
   }
 
   function parseBinBlock(buf) {
@@ -205,6 +223,11 @@ wss.on('connection', (ws, req) => {
 
       case 'connect': {
         if (scope) teardownScope('reconnecting')
+        // Rapid Connect spam: a previous connect attempt may still be in flight
+        // (TCP SYN sent, no 'connect' yet). Abandon it so it can't race the new
+        // socket and overwrite `scope` after this one wins, leaking the loser.
+        // Sends `{ok:false, error:'superseded'}` for the abandoned id.
+        abandonPendingScope('superseded by new connect')
         const host = String(msg.host || '').trim()
         const port = parseInt(msg.port || 5025, 10)
         if (!host) return send({ id, ok: false, error: 'host required' })
@@ -213,18 +236,26 @@ wss.on('connection', (ws, req) => {
         }
         let settled = false
         const sock = net.connect({ host, port })
+        pendingScope = { sock, id }
         sock.setKeepAlive(true, 5000)
         sock.setTimeout(0)
         const onError = (err) => {
           if (!settled) {
             settled = true
+            if (pendingScope && pendingScope.sock === sock) pendingScope = null
             send({ id, ok: false, error: 'connect failed: ' + err.message })
           } else {
             emitStatus('error', err.message)
           }
         }
         sock.once('connect', () => {
+          // Lost the race — a newer connect attempt has already replaced us.
+          if (!pendingScope || pendingScope.sock !== sock) {
+            try { sock.destroy() } catch {}
+            return
+          }
           settled = true
+          pendingScope = null
           scope = sock
           buffer = Buffer.alloc(0)
           send({ id, ok: true })
@@ -232,7 +263,14 @@ wss.on('connection', (ws, req) => {
         })
         sock.on('data', handleData)
         sock.on('error', onError)
-        sock.on('close', () => teardownScope('socket closed'))
+        sock.on('close', () => {
+          // Pre-connect close: just clear the slot. Post-connect close: full teardown.
+          if (pendingScope === sock) {
+            pendingScope = null
+            return
+          }
+          if (scope === sock) teardownScope('socket closed')
+        })
         return
       }
 
@@ -269,6 +307,7 @@ wss.on('connection', (ws, req) => {
 
   ws.on('close', () => {
     console.log('[bridge] client disconnected')
+    abandonPendingScope()
     teardownScope('ws closed')
   })
 
