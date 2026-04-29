@@ -116,7 +116,7 @@ class PortWrapper {
                 if (m) parsed.current = parseFloat(m[1])
               }
               if (line.includes('Voltage:')) {
-                const m = line.match(/Voltage:\s*(\d+\.?\d*)\s*V/)
+                const m = line.match(/Voltage:\s*(-?\d+\.?\d*)\s*V/)
                 if (m) parsed.voltage = parseFloat(m[1])
               }
               if (Object.keys(parsed).length) {
