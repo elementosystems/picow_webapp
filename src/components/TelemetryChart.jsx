@@ -13,12 +13,36 @@ function themeTokens() {
     text: readVar('--text-muted'),
     textFaint: readVar('--text-faint'),
     surface: readVar('--surface-1'),
+    surface2: readVar('--surface-2'),
   }
 }
 
 function fmtNumber(v, digits) {
   if (v == null || Number.isNaN(v)) return '—'
   return Number(v).toFixed(digits)
+}
+
+// Convert a #rrggbb / #rgb token into rgba(...) with the given alpha.
+// Falls back to the original string for non-hex values (rgb(), names, etc.).
+function withAlpha(color, alpha) {
+  if (!color) return `rgba(0,0,0,${alpha})`
+  const hex = color.trim()
+  if (hex.startsWith('#')) {
+    let r, g, b
+    if (hex.length === 4) {
+      r = parseInt(hex[1] + hex[1], 16)
+      g = parseInt(hex[2] + hex[2], 16)
+      b = parseInt(hex[3] + hex[3], 16)
+    } else if (hex.length === 7) {
+      r = parseInt(hex.slice(1, 3), 16)
+      g = parseInt(hex.slice(3, 5), 16)
+      b = parseInt(hex.slice(5, 7), 16)
+    } else {
+      return color
+    }
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`
+  }
+  return color
 }
 
 /**
@@ -129,11 +153,22 @@ export default function TelemetryChart({ series, data, height = 220, dualAxis = 
             const ctx = u.ctx
             const { left, top, width: plotW, height: plotH } = u.bbox
             const fallbackColor = t.text || '#888'
+            const pillBg = withAlpha(t.surface2 || '#1a1e27', 0.92)
+            const pillBorder = withAlpha(t.grid || '#262c39', 0.9)
+            const fontPx = 11
+            const lineH = 17        // row height (font + vertical padding)
+            const padX = 5
+            const padY = 2
+            const rowGap = 2
+
             ctx.save()
             ctx.lineWidth = 1
-            ctx.setLineDash([4, 3])
-            ctx.font = '10px ui-monospace, Menlo, Consolas, monospace'
+            ctx.font = `500 ${fontPx}px ui-monospace, Menlo, Consolas, monospace`
             ctx.textBaseline = 'top'
+
+            // First pass — vertical dashed guides beneath all labels so they
+            // never appear "behind" their own pill.
+            ctx.setLineDash([4, 3])
             for (const m of list) {
               const xPos = u.valToPos(m.ts, 'x', true)
               if (xPos == null || xPos < left || xPos > left + plotW) continue
@@ -142,16 +177,51 @@ export default function TelemetryChart({ series, data, height = 220, dualAxis = 
               ctx.moveTo(xPos + 0.5, top)
               ctx.lineTo(xPos + 0.5, top + plotH)
               ctx.stroke()
-              if (m.label) {
-                ctx.setLineDash([])
-                ctx.fillStyle = m.color || fallbackColor
-                const text = String(m.label)
-                const maxLen = 22
-                const display = text.length > maxLen ? text.slice(0, maxLen - 1) + '…' : text
-                ctx.fillText(display, xPos + 3, top + 2)
-                ctx.setLineDash([4, 3])
-              }
             }
+
+            // Second pass — labels with row-based collision avoidance. Each
+            // row tracks the rightmost x of every pill placed in it; a new
+            // pill drops down to the next row if it would overlap.
+            ctx.setLineDash([])
+            const rows = []           // rows[i] = [{x1, x2}, ...]
+            const maxRows = Math.max(1, Math.floor((plotH - 4) / (lineH + rowGap)))
+            const maxLen = 28
+            for (const m of list) {
+              if (!m.label) continue
+              const xPos = u.valToPos(m.ts, 'x', true)
+              if (xPos == null || xPos < left || xPos > left + plotW) continue
+              const text = String(m.label)
+              const display = text.length > maxLen ? text.slice(0, maxLen - 1) + '…' : text
+              const textW = ctx.measureText(display).width
+              const w = textW + padX * 2
+              const x1 = Math.min(xPos + 4, left + plotW - w - 1)
+              const x2 = x1 + w
+              // Find the first row this pill fits in
+              let row = 0
+              while (
+                row < rows.length &&
+                rows[row].some(s => !(x2 + 2 < s.x1 || x1 > s.x2 + 2))
+              ) row++
+              if (row >= maxRows) continue          // out of vertical room
+              if (row === rows.length) rows.push([])
+              rows[row].push({ x1, x2 })
+              const y = top + 3 + row * (lineH + rowGap)
+              // Pill background + thin coloured border
+              ctx.fillStyle = pillBg
+              ctx.fillRect(x1, y, w, lineH)
+              ctx.strokeStyle = withAlpha(m.color || fallbackColor, 0.55)
+              ctx.strokeRect(x1 + 0.5, y + 0.5, w - 1, lineH - 1)
+              // Label text
+              ctx.fillStyle = m.color || fallbackColor
+              ctx.fillText(display, x1 + padX, y + padY)
+              // Tiny pip joining the pill to the vertical line
+              ctx.strokeStyle = withAlpha(m.color || fallbackColor, 0.7)
+              ctx.beginPath()
+              ctx.moveTo(xPos + 0.5, y + lineH / 2)
+              ctx.lineTo(x1, y + lineH / 2)
+              ctx.stroke()
+            }
+            ctx.setLineDash([4, 3])  // restore dash for any subsequent draws
             ctx.restore()
           },
         ],
