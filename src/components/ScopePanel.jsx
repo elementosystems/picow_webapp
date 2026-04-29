@@ -38,6 +38,11 @@ const CHANNELS = ['CH1', 'CH2', 'CH3', 'CH4']
 const COUPLINGS = ['DC', 'AC', 'GND']
 const TRIG_MODES = ['AUTO', 'NORM']
 
+// Soft cap on the in-memory log buffer. Hitting it auto-stops logging so the
+// tab doesn't OOM during long unattended runs. Existing rows stay so the user
+// can still export.
+const LOG_BUFFER_CAP = 50000
+
 function fmtNum(v, digits = 3) {
   if (v == null || Number.isNaN(v)) return '—'
   if (Math.abs(v) >= 1e6 || (Math.abs(v) > 0 && Math.abs(v) < 1e-3)) {
@@ -134,11 +139,10 @@ export default function ScopePanel() {
           setErrMsg(typeof s.detail === 'string' ? s.detail : 'scope error')
         } else {
           setScopeConnected(false)
-          if (phase === 'connected') setPhase('idle')
+          setPhase(prev => prev === 'connected' ? 'idle' : prev)
         }
       }
     })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Polling loop
@@ -167,11 +171,15 @@ export default function ScopePanel() {
             v = match ? parseFloat(match[0]) : NaN
           }
           next[m.id] = v
-          if (logging) {
+          if (logging && logBufferRef.current.length < LOG_BUFFER_CAP) {
             logBufferRef.current.push({
               ts_ms: Date.now(), channel: metricChannel, metric: m.id, value: v,
             })
             setLogCount(logBufferRef.current.length)
+            if (logBufferRef.current.length >= LOG_BUFFER_CAP) {
+              setLogging(false)
+              console.warn(`[scope] log buffer hit cap (${LOG_BUFFER_CAP}) — auto-stopped`)
+            }
           }
         } catch (e) {
           next[m.id] = NaN
