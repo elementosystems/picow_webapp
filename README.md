@@ -2,9 +2,16 @@
 
 # PiCoW Console
 
+![PiCoW Console — live tour of v0.4.0](docs/preview.gif)
+
 A browser-based control + telemetry + automation console for a Raspberry Pi
 Pico W. Connects to the device over **WebUSB** (vendor `0xcafe`), and to a
 Siglent / SCPI-1999 network oscilloscope via a small localhost bridge.
+
+> The animation above is a recording of the live deployment at
+> [powerflashutility.bsadashi.work](https://powerflashutility.bsadashi.work)
+> running in demo mode — telemetry, threshold alerts, recording sessions,
+> scripted test sequences, and the SCPI scope panel.
 
 The companion firmware lives in [PicoWWebUSB](https://github.com/elementosystems/PicoWWebUSB).
 
