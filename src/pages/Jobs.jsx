@@ -275,14 +275,28 @@ function JobDetail({ id }) {
 function Field({ label, value, onSave, placeholder, multiline, rows = 3 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value || '')
+  const inputRef = React.useRef(null)
   React.useEffect(() => { setDraft(value || '') }, [value, editing])
+  React.useEffect(() => { if (editing && inputRef.current) inputRef.current.focus() }, [editing])
 
   if (!editing) {
     return (
-      <div className="card field-card">
+      <div
+        className="card field-card field-card--clickable"
+        role="button"
+        tabIndex={0}
+        aria-label={`Edit ${label}`}
+        onClick={() => setEditing(true)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setEditing(true)
+          }
+        }}
+      >
         <div className="field-card__head">
           <span className="field__label">{label}</span>
-          <button className="link" onClick={() => setEditing(true)}>edit</button>
+          <span className="field-card__edit-hint" aria-hidden="true">edit</span>
         </div>
         <div className={'field-card__value' + (value ? '' : ' field-card__value--empty')}>
           {value || <em>{placeholder || 'empty'}</em>}
@@ -297,6 +311,7 @@ function Field({ label, value, onSave, placeholder, multiline, rows = 3 }) {
       </div>
       {multiline ? (
         <textarea
+          ref={inputRef}
           className="input input--area"
           rows={rows}
           value={draft}
@@ -304,6 +319,7 @@ function Field({ label, value, onSave, placeholder, multiline, rows = 3 }) {
         />
       ) : (
         <input
+          ref={inputRef}
           className="input"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -402,7 +418,9 @@ function TimelineSection({ job }) {
         <ol className="timeline">
           {[...job.timeline].reverse().map((row) => (
             <li key={row.id} className={'timeline__row timeline__row--' + row.level}>
-              <span className="timeline__time">{new Date(row.ts).toLocaleTimeString()}</span>
+              <span className="timeline__time">
+                {new Date(row.ts).toLocaleTimeString([], { hour12: false })}
+              </span>
               <span className="timeline__source">{row.source || '—'}</span>
               <span className="timeline__msg">{row.message}</span>
             </li>

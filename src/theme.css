@@ -2098,6 +2098,33 @@ select.input {
 .field-card__value { white-space: pre-wrap; word-break: break-word; }
 .field-card__value--empty { color: var(--text-faint); }
 
+/* Whole-card click target when not editing. The 11px "edit" link was a
+   hard-to-hit affordance on touch — making the entire card clickable
+   gives a generous tap area while the explicit hint remains for keyboard
+   users (with role="button" + tabIndex on the JSX side). */
+.field-card--clickable {
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  transition: border-color var(--t-fast), background var(--t-fast);
+}
+.field-card--clickable:hover { border-color: var(--border-strong); background: var(--surface-2); }
+.field-card--clickable:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+.field-card__edit-hint {
+  font-size: 0.78rem;
+  color: var(--info);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 /* ── Form grid ──────────────────────────────────────────────────────────── */
 .form-grid {
   display: grid;
@@ -2181,7 +2208,8 @@ select.input {
 .timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; max-height: 480px; overflow-y: auto; }
 .timeline__row {
   display: grid;
-  grid-template-columns: 80px 100px 1fr;
+  /* 96px (was 80) gives a 24h "23:59:59" stamp room without wrapping. */
+  grid-template-columns: 96px 100px 1fr;
   gap: var(--s-2);
   padding: 4px var(--s-2);
   border-radius: var(--radius-sm);
