@@ -245,18 +245,20 @@ App.jsx is the natural seam.
 
 ### 10.1 Known accessibility gaps
 
-Verified by inspecting computed styles in a live preview at desktop width.
+All 8 issues identified during the initial preview-based audit have been
+closed. Verified contrast ratios are from re-inspection of computed styles
+after the fix landed.
 
-| # | Issue | Location | Severity | Recommended fix |
-|---|---|---|---|---|
-| 1 | `.btn--danger` contrast **2.71 : 1** (white on `#ff6e7a`) | All Delete / Reset buttons | 🔴 WCAG AA fail | Set `color: var(--text-on-accent)` (dark) instead of `#fff`, OR darken `--danger` |
-| 2 | `.field__label` **4.15 : 1** at 11.2 px | All form labels | ⚠️ Marginal AA fail for small text | Bump to `--text-muted` (`#9ba4b6`, ~7.75 : 1) |
-| 3 | `.timeline__time` **4.15 : 1** at 13.12 px | Job detail timeline | ⚠️ Marginal | Same as above, or treat as auxiliary info and accept |
-| 4 | Nav-item touch target **33 px** | Mobile breakpoint | ⚠️ Below 44 px | Add `min-height: 44px` inside the `≤ 720px` media query |
-| 5 | Field-card "edit" link **11 px** | Job detail editable fields | ⚠️ Hard to hit on touch | Make whole `.field-card` clickable when not editing |
-| 6 | Status `<select>` looks like a button | Job detail action row | 🟡 Visual | Add chevron suffix or "Status:" label prefix |
-| 7 | Timeline timestamp column wraps "11:34:09 PM" onto two lines | Job detail timeline | 🟡 Visual | Bump grid column from `80px` → `96px`, or drop AM/PM (24-hour) |
-| 8 | Inventory `−` button stays active at qty 0 | Inventory rows | 🟢 Minor | Set `disabled` when `p.qty === 0` |
+| # | Issue | Closed in | Status |
+|---|---|---|---|
+| 1 | `.btn--danger` contrast 2.71 → **6.76** : 1 | `e3423cb` | ✅ WCAG AA pass |
+| 2 | `.field__label` 4.15 → **7.75** : 1 | `e3423cb` | ✅ |
+| 3 | `.timeline__time` 4.15 → **7.75** : 1 | `e3423cb` | ✅ |
+| 4 | Mobile nav touch target 33 → **44 px** | `e3423cb` | ✅ WCAG 2.5.5 (AAA) |
+| 5 | Field-card whole-card click + auto-focus on edit | `f4d0033` | ✅ Tap area now ~80 × 80 px |
+| 6 | `<select.input>` chevron restored via inline SVG | `e3423cb` | ✅ Visually distinct from buttons |
+| 7 | Timeline timestamps 24-hour + column 80 → **96 px** | `f4d0033` | ✅ Single line in any locale |
+| 8 | Inventory `−` disabled at qty 0 | `ef47a6a` | ✅ Picks up existing `.btn:disabled` styling |
 
 ---
 
