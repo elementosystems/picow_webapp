@@ -4,6 +4,8 @@ import Connection from './components/Connection'
 import Controls from './components/Controls'
 import Charts from './components/Charts'
 import EventLog from './components/EventLog'
+import Sessions from './components/Sessions'
+import Scripts from './components/Scripts'
 import ScopePanel from './components/ScopePanel'
 import SerialConsole from './components/SerialConsole'
 import ThemeToggle from './components/DarkModeToggle'
@@ -29,6 +31,20 @@ export default function App() {
         <Controls />
         <Charts />
         <EventLog />
+        <details className="disclosure">
+          <summary>
+            Recording
+            <span className="disclosure__hint">Save / replay telemetry sessions</span>
+          </summary>
+          <Sessions />
+        </details>
+        <details className="disclosure">
+          <summary>
+            Test scripts
+            <span className="disclosure__hint">Automated test sequences</span>
+          </summary>
+          <Scripts />
+        </details>
         <details className="disclosure">
           <summary>
             Oscilloscope

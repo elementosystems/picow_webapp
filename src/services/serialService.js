@@ -69,7 +69,8 @@ class PortWrapper {
 
   const serialService = {
     port: null,
-    telemetryCb: null,
+    telemetryCb: null,            // legacy single-slot callback (kept for back-compat)
+    telemetryListeners: [],       // multi-subscriber list
     connectionCbs: [],
     rawListeners: [],
     textDecoder: new TextDecoder(),
@@ -121,7 +122,12 @@ class PortWrapper {
               }
               if (Object.keys(parsed).length) {
                 parsed.time = now
-                if (this.telemetryCb) this.telemetryCb(parsed)
+                if (this.telemetryCb) {
+                  try { this.telemetryCb(parsed) } catch (e) { /* swallow */ }
+                }
+                for (let i = 0; i < this.telemetryListeners.length; i++) {
+                  try { this.telemetryListeners[i](parsed) } catch (e) { /* swallow */ }
+                }
               }
             })
           } catch (err) {
@@ -163,6 +169,8 @@ class PortWrapper {
     },
 
     setOnTelemetry(cb) { this.telemetryCb = cb },
+    addOnTelemetry(cb) { if (typeof cb === 'function') this.telemetryListeners.push(cb) },
+    removeOnTelemetry(cb) { this.telemetryListeners = this.telemetryListeners.filter(fn => fn !== cb) },
     addOnConnectionChange(cb) { if (typeof cb === 'function') this.connectionCbs.push(cb) },
     removeOnConnectionChange(cb) { this.connectionCbs = this.connectionCbs.filter(fn => fn !== cb) },
     addRawListener(cb) { if (typeof cb === 'function') this.rawListeners.push(cb) },
