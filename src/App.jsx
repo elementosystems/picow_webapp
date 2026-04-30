@@ -1,16 +1,29 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import versionInfo from '../version.json'
-import Connection from './components/Connection'
-import Controls from './components/Controls'
-import Charts from './components/Charts'
-import EventLog from './components/EventLog'
-import Sessions from './components/Sessions'
-import Scripts from './components/Scripts'
-import ScopePanel from './components/ScopePanel'
-import SerialConsole from './components/SerialConsole'
 import ThemeToggle from './components/DarkModeToggle'
+import { NavLink, useRoute, navigate, matchPath } from './router/Router'
+import { jobsStore } from './stores/jobs'
+import { inventoryStore, isLow } from './stores/inventory'
+import { startSessionBridge } from './stores/sessionBridge'
+
+import Workbench from './pages/Workbench'
+import Jobs from './pages/Jobs'
+import Inventory from './pages/Inventory'
+import Tools from './pages/Tools'
+import Settings from './pages/Settings'
+
+const NAV = [
+  { to: '/',          label: 'Workbench' },
+  { to: '/jobs',      label: 'Jobs'      },
+  { to: '/inventory', label: 'Inventory' },
+  { to: '/tools',     label: 'Tools'     },
+  { to: '/settings',  label: 'Settings'  },
+]
 
 export default function App() {
+  useEffect(() => { startSessionBridge() }, [])
+  const route = useRoute()
+
   return (
     <div className="app">
       <header className="appbar">
@@ -18,47 +31,31 @@ export default function App() {
           <div className="brand-mark" aria-hidden="true">P</div>
           <div className="brand-text">
             <div className="brand-title">PiCoW Console</div>
-            <div className="brand-subtitle">Power & Flash Control · Pico W</div>
+            <div className="brand-subtitle">Bench tools · jobs · inventory</div>
           </div>
         </div>
+        <nav className="appbar__nav" aria-label="Primary">
+          {NAV.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              exact={item.to === '/'}
+              className="appbar__navitem"
+              activeClassName="is-active"
+            >
+              {item.label}
+              {item.to === '/inventory' && <LowChip />}
+            </NavLink>
+          ))}
+        </nav>
         <div className="appbar__actions">
+          <ActiveJobChip />
           <ThemeToggle />
         </div>
       </header>
 
       <main className="main">
-        <Connection />
-        <Controls />
-        <Charts />
-        <EventLog />
-        <details className="disclosure">
-          <summary>
-            Recording
-            <span className="disclosure__hint">Save / replay telemetry sessions</span>
-          </summary>
-          <Sessions />
-        </details>
-        <details className="disclosure">
-          <summary>
-            Test scripts
-            <span className="disclosure__hint">Automated test sequences</span>
-          </summary>
-          <Scripts />
-        </details>
-        <details className="disclosure">
-          <summary>
-            Oscilloscope
-            <span className="disclosure__hint">Siglent / SCPI over LAN</span>
-          </summary>
-          <ScopePanel />
-        </details>
-        <details className="disclosure">
-          <summary>
-            Serial console
-            <span className="disclosure__hint">Diagnostics</span>
-          </summary>
-          <SerialConsole />
-        </details>
+        <Page path={route.path} />
       </main>
 
       <footer className="footer">
@@ -73,4 +70,49 @@ export default function App() {
       </footer>
     </div>
   )
+}
+
+function Page({ path }) {
+  if (path === '/' || path === '') return <Workbench />
+  if (path === '/jobs' || matchPath('/jobs/:id', path)) return <Jobs />
+  if (path === '/inventory') return <Inventory />
+  if (path === '/tools') return <Tools />
+  if (path === '/settings') return <Settings />
+  return <NotFound path={path} />
+}
+
+function NotFound({ path }) {
+  return (
+    <section className="page">
+      <header className="page__head">
+        <h1 className="page__title">Not found</h1>
+        <p className="page__sub">No page at <code>{path}</code>.</p>
+      </header>
+      <button className="btn btn--primary" onClick={() => navigate('/')}>Back to Workbench</button>
+    </section>
+  )
+}
+
+function ActiveJobChip() {
+  const job = jobsStore.useStore((s) =>
+    s.activeId ? s.items.find((j) => j.id === s.activeId) || null : null
+  )
+  if (!job) return null
+  return (
+    <button
+      className="chip chip--active"
+      onClick={() => navigate('/jobs/' + job.id)}
+      title="Click to open the tracked job"
+    >
+      <span className="chip__dot" />
+      <span className="chip__label">tracking:</span>
+      <span className="chip__value">{job.title}</span>
+    </button>
+  )
+}
+
+function LowChip() {
+  const count = inventoryStore.useStore((s) => s.items.filter(isLow).length)
+  if (!count) return null
+  return <span className="appbar__navchip">{count} low</span>
 }
