@@ -97,7 +97,12 @@ export default function Inventory() {
                   <td>{p.category || <span className="t-muted">—</span>}</td>
                   <td className="inv__num">
                     <div className="inv__qty">
-                      <button className="btn btn--sm" onClick={() => adjustQty(p.id, -1)} aria-label="decrement">−</button>
+                      <button
+                        className="btn btn--sm"
+                        onClick={() => adjustQty(p.id, -1)}
+                        disabled={p.qty === 0}
+                        aria-label="decrement"
+                      >−</button>
                       <span className="inv__qty-num">{p.qty}</span>
                       <button className="btn btn--sm" onClick={() => adjustQty(p.id, +1)} aria-label="increment">+</button>
                     </div>
