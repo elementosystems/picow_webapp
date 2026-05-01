@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Persistence — Lissajous, breathing</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  /* ── PERSISTENCE ─────────────────────────────────────────────────────
+     A single luminous trace, drawn parametrically along two oscillations
+     in tension. Decay is the medium. Stillness lengthens the trail; motion
+     ghosts it. The piece breathes with the viewer's breath.
+     ───────────────────────────────────────────────────────────────── */
+
+  :root {
+    --bg:       #050608;
+    --ink:     #79ecbb;       /* phosphor peak */
+    --ink-dim: #2c8a6a;       /* phosphor cool */
+    --rule:    rgba(121, 236, 187, 0.12);
+    --whisper: rgba(255, 255, 255, 0.32);
+    --hush:    rgba(255, 255, 255, 0.14);
+    --serif:   'EB Garamond', 'Cormorant Garamond', 'Times New Roman', serif;
+    --mono:    'JetBrains Mono', 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@300;400&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--whisper);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    overflow: hidden;
+    cursor: crosshair;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* The vessel — a thin frame inset, the way a museum mat frames a print. */
+  .stage {
+    position: fixed;
+    inset: 0;
+  }
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* Registration marks at each corner — surveyor's stakes. */
+  .mark {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    color: var(--rule);
+    pointer-events: none;
+  }
+  .mark::before, .mark::after {
+    content: '';
+    position: absolute;
+    background: currentColor;
+  }
+  .mark::before { left: 0; top: 50%; width: 100%; height: 1px; transform: translateY(-50%); }
+  .mark::after  { top: 0; left: 50%; height: 100%; width: 1px;  transform: translateX(-50%); }
+  .mark.tl { top: 28px; left: 28px; }
+  .mark.tr { top: 28px; right: 28px; }
+  .mark.bl { bottom: 28px; left: 28px; }
+  .mark.br { bottom: 28px; right: 28px; }
+
+  /* The wordmark — a single phrase set in a serif built for slow reading. */
+  .wordmark {
+    position: absolute;
+    bottom: 36px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 400;
+    font-size: 14px;
+    /* Tracked just wide enough that the letters breathe but the word still
+       reads as a word, not a constellation. */
+    letter-spacing: 0.36em;
+    text-transform: lowercase;
+    color: var(--whisper);
+    pointer-events: none;
+    text-indent: 0.36em; /* center-balance the trailing space introduced by tracking */
+  }
+
+  /* Telemetry — the labels a working hand would scratch onto the bezel. */
+  .label {
+    position: absolute;
+    color: var(--hush);
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 300;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    pointer-events: none;
+    line-height: 1.6;
+    white-space: nowrap;
+  }
+  .label .num   { color: var(--whisper); font-weight: 400; }
+  .label .unit  { color: var(--hush); }
+  .label .key   { color: var(--hush); }
+  .tl-label { top: 28px;     left: 56px; }
+  .tr-label { top: 28px;     right: 56px; text-align: right; }
+  .bl-label { bottom: 28px;  left: 56px; }
+  .br-label { bottom: 28px;  right: 56px; text-align: right; }
+
+  .signature {
+    position: absolute;
+    top: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: var(--hush);
+    pointer-events: none;
+  }
+  .signature span { color: var(--whisper); font-style: normal; font-family: var(--mono); font-weight: 300; letter-spacing: 0.2em; }
+
+  /* The instructions are a single quiet line — there only on first arrival. */
+  .invitation {
+    position: absolute;
+    bottom: 64px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--rule);
+    pointer-events: none;
+    transition: opacity 800ms ease;
+    opacity: 1;
+  }
+  body.touched .invitation { opacity: 0; }
+
+  /* Phosphor scanline — the faintest texture, lest the work feel digital. */
+  .scanlines {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.0125) 0,
+      rgba(255,255,255,0.0125) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    mix-blend-mode: overlay;
+  }
+
+  /* Vignette — gathers the eye toward the trace. */
+  .vignette {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      ellipse at center,
+      transparent 40%,
+      rgba(0, 0, 0, 0.55) 100%
+    );
+  }
+
+  @media (max-width: 600px) {
+    .label, .signature { font-size: 9px; }
+    .wordmark { font-size: 12px; bottom: 24px; }
+    .mark.tl { top: 16px; left: 16px; }
+    .mark.tr { top: 16px; right: 16px; }
+    .mark.bl { bottom: 16px; left: 16px; }
+    .mark.br { bottom: 16px; right: 16px; }
+    .tl-label { top: 16px; left: 44px; }
+    .tr-label { top: 16px; right: 44px; }
+    /* On narrow screens the bottom row competes with the wordmark and
+       the invitation. Persistence / Field / Phosphor are bezel-detail
+       labels — quiet on a wide canvas, noise on a phone. The figure
+       itself remains the work; the labels yield. */
+    .bl-label, .br-label, .invitation { display: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <canvas id="c" aria-label="A luminous Lissajous figure breathing on a dark field"></canvas>
+    <div class="scanlines"></div>
+    <div class="vignette"></div>
+
+    <span class="mark tl"></span>
+    <span class="mark tr"></span>
+    <span class="mark bl"></span>
+    <span class="mark br"></span>
+
+    <div class="signature">No. <span id="sig">001</span></div>
+
+    <div class="label tl-label">
+      <div><span class="key">RATIO</span> &nbsp; <span class="num" id="ratio">3 : 5</span></div>
+      <div><span class="key">PHASE</span> &nbsp; <span class="num" id="phase">π/2</span></div>
+    </div>
+
+    <div class="label tr-label">
+      <div><span class="key">DECAY</span> &nbsp; <span class="num" id="decay">0.040</span></div>
+      <div><span class="key">DWELL</span> &nbsp; <span class="num" id="dwell">0.00</span><span class="unit">&nbsp;s</span></div>
+    </div>
+
+    <div class="label bl-label">
+      <div><span class="key">PERSISTENCE</span></div>
+      <div><span class="num" id="counter">0000</span><span class="unit">&nbsp;cycles</span></div>
+    </div>
+
+    <div class="label br-label">
+      <div><span class="key">FIELD</span> &nbsp; <span class="num" id="dims">— × —</span></div>
+      <div><span class="key">PHOSPHOR</span> &nbsp; <span class="num">P31</span></div>
+    </div>
+
+    <div class="wordmark">persistence</div>
+    <div class="invitation">move · click to advance · scroll to tune</div>
+  </div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+
+  // The harmonic targets. Each pair (a, b) closes a Lissajous figure.
+  // The progression mirrors a tuning hand exploring resonance: simple at
+  // first, then richer, then back. The list is read circularly.
+  const RATIOS = [
+    [1, 1], [2, 3], [3, 4], [3, 5], [4, 5], [5, 7],
+    [5, 8], [4, 9], [7, 9], [2, 5], [1, 2], [1, 3],
+  ];
+  let ratioIdx = 3;        // start at 3:5 — the figure that breathes most quietly
+  let target = ratioFromIdx(ratioIdx);
+
+  // Live, smoothly-interpolated parameters. The work never snaps; it eases.
+  const live = {
+    a: target.a,
+    b: target.b,
+    delta: Math.PI / 2,    // 90° → closed figure
+    decay: 0.040,          // base trail-fade rate (per frame at 60fps)
+    speed: 0.00075,        // angular speed of the parametric trace
+    bloom: 16,             // shadow-blur radius — phosphor halo
+    beam:  1.35,           // line width
+    cursorBend: 0,         // 0..1 — how much the cursor pulls the figure
+  };
+
+  // Cursor state — drives the breath.
+  const cursor = { x: 0.5, y: 0.5, lastMoveAt: 0, hasMoved: false };
+
+  // Per-frame phase accumulator — never resets.
+  let phase = 0;
+  let cycles = 0;
+  let dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+  let W = 0, H = 0, cx = 0, cy = 0, R = 0;
+
+  function resize() {
+    dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    W = canvas.clientWidth;
+    H = canvas.clientHeight;
+    canvas.width  = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cx = W / 2;
+    cy = H / 2;
+    // Inset radius so the figure breathes inside the frame. Quarter-of-the-
+    // shorter-edge minus the registration-mark inset; tuned by eye.
+    R = Math.min(W, H) * 0.36;
+    // Reset the field with a clean black; do not preserve the prior frame's
+    // trail across a resize — the geometry of decay would be wrong.
+    ctx.fillStyle = '#050608';
+    ctx.fillRect(0, 0, W, H);
+    document.getElementById('dims').textContent = W + ' × ' + H;
+  }
+
+  function ratioFromIdx(i) {
+    const r = RATIOS[((i % RATIOS.length) + RATIOS.length) % RATIOS.length];
+    return { a: r[0], b: r[1] };
+  }
+
+  // Smooth approach. Half-life expressed in frames; stable on any framerate.
+  function approach(value, target, halfLife) {
+    const k = 1 - Math.pow(0.5, 1 / Math.max(1, halfLife));
+    return value + (target - value) * k;
+  }
+
+  // The trace itself. We draw a short polyline each frame at the current
+  // phase, then advance. The previous frames' contributions fade through the
+  // translucent black overlay. This is the entire physics of phosphor.
+  function drawTraceSegment(phase0, segment) {
+    const { a, b, delta } = live;
+    // Bend the figure toward the cursor — a soft, sub-pixel pull. Capped so
+    // the underlying geometry remains the dominant signal.
+    const dx = (cursor.x - 0.5) * R * 0.18 * live.cursorBend;
+    const dy = (cursor.y - 0.5) * R * 0.18 * live.cursorBend;
+
+    const N = 96;
+    const dPhi = segment / N;
+    ctx.beginPath();
+    for (let i = 0; i <= N; i++) {
+      const phi = phase0 + i * dPhi;
+      const x = cx + dx + R * Math.sin(a * phi + delta);
+      const y = cy + dy + R * Math.sin(b * phi);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  let last = performance.now();
+  let dwellSec = 0;
+
+  function frame(now) {
+    const dt = Math.min(now - last, 50);
+    last = now;
+
+    // Ease live parameters toward targets. The eye should never see a step.
+    live.a     = approach(live.a, target.a, 24);
+    live.b     = approach(live.b, target.b, 24);
+    live.cursorBend = approach(live.cursorBend, cursor.hasMoved ? 1 : 0, 30);
+
+    // Dwell increases when the cursor is still. Long dwell reduces decay,
+    // lengthening the trail — the work brightens for the patient viewer.
+    const stillFor = (now - cursor.lastMoveAt) / 1000;
+    dwellSec = Math.min(8, stillFor);
+    const decayBoost = Math.min(0.6, dwellSec / 8);
+    const effectiveDecay = live.decay * (1 - decayBoost * 0.85);
+
+    // Lay down the fade. This is the medium itself.
+    ctx.fillStyle = 'rgba(5, 6, 8, ' + effectiveDecay.toFixed(3) + ')';
+    ctx.fillRect(0, 0, W, H);
+
+    // The trace. Two passes: first a soft halo, then the bright core.
+    // Two passes give the phosphor its body without requiring a separate
+    // canvas or expensive per-pixel work.
+    const segment = live.speed * dt * 1000 * 0.001 * 60; // radians per frame at 60fps
+
+    // Halo pass — wider, dimmer, large blur.
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = 'rgba(121, 236, 187, 0.22)';
+    ctx.shadowColor = 'rgba(121, 236, 187, 0.55)';
+    ctx.shadowBlur = live.bloom * 1.6;
+    ctx.lineWidth = live.beam * 3.4;
+    drawTraceSegment(phase, segment);
+
+    // Core pass — thin, hot. Slightly cooler than the halo so the trace
+    // reads as green at the eye, not white. The eye reads the brightest
+    // pixel; if that pixel drifts toward white the whole work loses its
+    // phosphor identity, no matter how much halo surrounds it.
+    ctx.strokeStyle = 'rgba(155, 244, 200, 0.92)';
+    ctx.shadowColor = '#7af0bb';
+    ctx.shadowBlur = live.bloom * 0.8;
+    ctx.lineWidth = live.beam;
+    drawTraceSegment(phase, segment);
+
+    // Reset shadow to avoid bleeding into incidental draws.
+    ctx.shadowBlur = 0;
+
+    phase += segment;
+    cycles += segment / (Math.PI * 2);
+
+    // Telemetry.
+    if ((now | 0) % 4 === 0) {
+      document.getElementById('counter').textContent = String(Math.floor(cycles)).padStart(4, '0');
+      document.getElementById('decay').textContent = effectiveDecay.toFixed(3);
+      document.getElementById('dwell').textContent = dwellSec.toFixed(2);
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  // Interaction.
+  function setRatio(idx) {
+    ratioIdx = ((idx % RATIOS.length) + RATIOS.length) % RATIOS.length;
+    target = ratioFromIdx(ratioIdx);
+    document.getElementById('ratio').textContent = target.a + ' : ' + target.b;
+    document.getElementById('sig').textContent = String(ratioIdx + 1).padStart(3, '0');
+  }
+
+  function onMove(e) {
+    const t = e.touches ? e.touches[0] : e;
+    const rect = canvas.getBoundingClientRect();
+    cursor.x = (t.clientX - rect.left) / rect.width;
+    cursor.y = (t.clientY - rect.top)  / rect.height;
+    cursor.lastMoveAt = performance.now();
+    cursor.hasMoved = true;
+    document.body.classList.add('touched');
+  }
+
+  function onClick() {
+    setRatio(ratioIdx + 1);
+    document.body.classList.add('touched');
+  }
+
+  function onWheel(e) {
+    // Decay tuning — slow scroll deepens the trail.
+    e.preventDefault();
+    const delta = Math.sign(e.deltaY) * 0.004;
+    live.decay = Math.max(0.012, Math.min(0.10, live.decay + delta));
+    document.body.classList.add('touched');
+  }
+
+  function onKey(e) {
+    if (e.key === 'ArrowRight' || e.key === ' ') { setRatio(ratioIdx + 1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') { setRatio(ratioIdx - 1); e.preventDefault(); }
+  }
+
+  // Phase modulation — tiny, slow, keeps the figure from feeling locked.
+  // Each ratio change perturbs delta ever so slightly; over time the
+  // figure breathes through small phase drifts, never the same twice.
+  let phaseDriftT = 0;
+  setInterval(() => {
+    phaseDriftT += 0.013;
+    live.delta = Math.PI / 2 + Math.sin(phaseDriftT) * 0.04;
+    document.getElementById('phase').textContent =
+      (live.delta / Math.PI).toFixed(3) + 'π';
+  }, 80);
+
+  window.addEventListener('resize', resize);
+  canvas.addEventListener('mousemove', onMove, { passive: true });
+  canvas.addEventListener('touchmove', onMove, { passive: true });
+  canvas.addEventListener('click', onClick);
+  canvas.addEventListener('wheel', onWheel, { passive: false });
+  window.addEventListener('keydown', onKey);
+
+  setRatio(ratioIdx);
+  resize();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
