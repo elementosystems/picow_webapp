@@ -1,76 +1,117 @@
-import React from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import versionInfo from '../version.json'
-import Connection from './components/Connection'
-import Controls from './components/Controls'
-import Charts from './components/Charts'
-import EventLog from './components/EventLog'
-import Sessions from './components/Sessions'
-import Scripts from './components/Scripts'
+import serialService from './services/serialService'
+import eventBus from './services/eventBus'
+import { TitleBar, Rail } from './components/Shell'
+import Workbench from './components/Workbench'
 import ScopePanel from './components/ScopePanel'
-import SerialConsole from './components/SerialConsole'
-import ThemeToggle from './components/DarkModeToggle'
+import Settings from './components/Settings'
+import Toast from './components/Toast'
+
+const NAV = [
+  { id: 'workbench', label: 'Workbench', icon: 'workbench' },
+  { id: 'scope',     label: 'Scope',     icon: 'scope' },
+  { id: 'settings',  label: 'Settings',  icon: 'settings' },
+]
+
+const CONN_LABEL = {
+  idle:       'Idle · click to connect',
+  connecting: 'Opening port…',
+  connected:  'Pico W · USB',
+  error:      'USB error · click to retry',
+}
+
+function readDensity() {
+  try { return localStorage.getItem('picow:density') || 'regular' }
+  catch { return 'regular' }
+}
 
 export default function App() {
+  const [tab, setTab] = useState('workbench')
+  const [density, setDensity] = useState(readDensity)
+
+  // Listen for density changes from the Settings tab via storage events.
+  useEffect(() => {
+    function onStorage(e) {
+      if (e.key === 'picow:density') setDensity(e.newValue || 'regular')
+    }
+    window.addEventListener('storage', onStorage)
+    // Also poll a refresh whenever the Settings tab is open — `storage` events
+    // only fire across tabs, not within the same one, so Settings updates
+    // localStorage and `Settings` itself toggles the class. We re-read once
+    // every time density changes to keep the App-managed class in sync.
+    const id = setInterval(() => {
+      const v = readDensity()
+      setDensity((prev) => (prev === v ? prev : v))
+    }, 1000)
+    return () => { window.removeEventListener('storage', onStorage); clearInterval(id) }
+  }, [])
+
+  // Connection state lifted to App so the titlebar pill can drive it from any tab.
+  const [conn, setConn] = useState(serialService.isConnected() ? 'connected' : 'idle')
+  const [connError, setConnError] = useState('')
+
+  useEffect(() => {
+    function onConn(c) {
+      setConn(c ? 'connected' : 'idle')
+      if (!c) setConnError('')
+    }
+    serialService.addOnConnectionChange(onConn)
+    return () => serialService.removeOnConnectionChange(onConn)
+  }, [])
+
+  async function handleConn() {
+    if (conn === 'connecting') return
+    if (conn === 'connected') {
+      try {
+        await serialService.disconnect()
+        setConn('idle')
+        eventBus.emit('info', 'conn', 'Device disconnected')
+      } catch (err) {
+        const msg = err?.message || 'Failed to disconnect'
+        setConn('error'); setConnError(msg)
+        eventBus.emit('err', 'conn', 'Disconnect failed: ' + msg)
+      }
+      return
+    }
+    setConn('connecting'); setConnError('')
+    try {
+      await serialService.requestPort()
+      await serialService.connect()
+      setConn('connected')
+      eventBus.emit('info', 'conn', 'Device connected')
+    } catch (err) {
+      const msg = err?.message || 'Could not open device'
+      setConn('error'); setConnError(msg)
+      eventBus.emit('err', 'conn', 'Connect failed: ' + msg)
+    }
+  }
+
+  const crumb = useMemo(() => {
+    const cur = NAV.find((n) => n.id === tab)
+    return `PiCoW · ${cur ? cur.label.toUpperCase() : ''}`
+  }, [tab])
+
+  // Workbench/Scope/Settings all run without the secondary list pane.
+  const noList = true
+
   return (
-    <div className="app">
-      <header className="appbar">
-        <div className="appbar__brand">
-          <div className="brand-mark" aria-hidden="true">P</div>
-          <div className="brand-text">
-            <div className="brand-title">PiCoW Console</div>
-            <div className="brand-subtitle">Power & Flash Control · Pico W</div>
-          </div>
-        </div>
-        <div className="appbar__actions">
-          <ThemeToggle />
-        </div>
-      </header>
+    <div className={`bode-shell ${noList ? 'no-list' : ''} density-${density}`} data-version={versionInfo.version}>
+      <TitleBar
+        crumb={crumb}
+        connState={conn}
+        connLabel={CONN_LABEL[conn]}
+        onConnClick={handleConn}
+      />
+      <Rail items={NAV} active={tab} onSelect={setTab} />
 
-      <main className="main">
-        <Connection />
-        <Controls />
-        <Charts />
-        <EventLog />
-        <details className="disclosure">
-          <summary>
-            Recording
-            <span className="disclosure__hint">Save / replay telemetry sessions</span>
-          </summary>
-          <Sessions />
-        </details>
-        <details className="disclosure">
-          <summary>
-            Test scripts
-            <span className="disclosure__hint">Automated test sequences</span>
-          </summary>
-          <Scripts />
-        </details>
-        <details className="disclosure">
-          <summary>
-            Oscilloscope
-            <span className="disclosure__hint">Siglent / SCPI over LAN</span>
-          </summary>
-          <ScopePanel />
-        </details>
-        <details className="disclosure">
-          <summary>
-            Serial console
-            <span className="disclosure__hint">Diagnostics</span>
-          </summary>
-          <SerialConsole />
-        </details>
-      </main>
+      {tab === 'workbench' && (
+        <Workbench connected={conn === 'connected'} onConnect={handleConn} connecting={conn === 'connecting'} />
+      )}
+      {tab === 'scope' && <ScopePanel />}
+      {tab === 'settings' && <Settings version={versionInfo.version} />}
 
-      <footer className="footer">
-        <a href="https://github.com/elementosystems/picow_webapp" target="_blank" rel="noreferrer" aria-label="View on GitHub">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-            <path d="M8 .2a8 8 0 0 0-2.53 15.59c.4.07.55-.18.55-.39v-1.36c-2.22.48-2.69-1.07-2.69-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.05-.49.05-.49.81.06 1.23.83 1.23.83.72 1.22 1.88.87 2.34.66.07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.83-2.15-.08-.2-.36-1.02.08-2.13 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.03 2.2-.82 2.2-.82.44 1.11.16 1.93.08 2.13.51.56.83 1.28.83 2.15 0 3.07-1.87 3.74-3.65 3.94.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.39A8 8 0 0 0 8 .2Z"/>
-          </svg>
-          <span>elementosystems/picow_webapp</span>
-        </a>
-        <div>&copy; 2025 BSADASHI</div>
-        <div className="footer__version">v{versionInfo.version}</div>
-      </footer>
+      <Toast key={connError} message={connError} onDismiss={() => setConnError('')} />
     </div>
   )
 }
