@@ -61,10 +61,10 @@ function JobsList() {
       <header className="page__head">
         <div>
           <h1 className="page__title">Jobs</h1>
-          <p className="page__sub">Repair journal — one entry per device on the bench.</p>
+          <p className="page__sub">Repair journal, one entry per device on the bench.</p>
         </div>
         <div className="page__actions">
-          <button className="btn btn--primary" onClick={() => setShowNew((v) => !v)}>
+          <button className="btn btn-primary" onClick={() => setShowNew((v) => !v)}>
             {showNew ? 'Cancel' : 'New job'}
           </button>
         </div>
@@ -118,7 +118,7 @@ function JobsList() {
                 <div className="jobs__row-side">
                   <span className="jobs__when">{relTime(j.updatedAt)}</span>
                   <span className="jobs__counts">
-                    {j.timeline.length}♦ {j.photos.length}◊
+                    {j.timeline.length} events · {j.photos.length} photos
                   </span>
                 </div>
               </button>
@@ -176,7 +176,7 @@ function NewJobForm({ onCreated }) {
         />
       </label>
       <div className="form__actions">
-        <button type="submit" className="btn btn--primary">Create job</button>
+        <button type="submit" className="btn btn-primary">Create job</button>
       </div>
     </form>
   )
@@ -190,9 +190,14 @@ function JobDetail({ id }) {
     return (
       <section className="page">
         <header className="page__head">
-          <h1 className="page__title">Job not found</h1>
+          <div>
+            <h1 className="page__title">Job not found</h1>
+            <p className="page__sub">It may have been deleted or came from another browser.</p>
+          </div>
         </header>
-        <button className="btn" onClick={() => navigate('/jobs')}>← Back to jobs</button>
+        <div>
+          <button className="btn btn-secondary" onClick={() => navigate('/jobs')}>Back to jobs</button>
+        </div>
       </section>
     )
   }
@@ -211,7 +216,7 @@ function JobDetail({ id }) {
     <section className="page">
       <header className="page__head">
         <div>
-          <button className="link" onClick={() => navigate('/jobs')}>← All jobs</button>
+          <button className="link" onClick={() => navigate('/jobs')}>Jobs /</button>
           <h1 className="page__title">{job.title}</h1>
           <div className="page__sub">
             <span className={'pill pill--' + job.status}>{STATUS_LABEL[job.status]}</span>
@@ -222,9 +227,9 @@ function JobDetail({ id }) {
         </div>
         <div className="page__actions">
           {isActive ? (
-            <button className="btn" onClick={() => clearActiveJob()}>Stop tracking</button>
+            <button className="btn btn-secondary" onClick={() => clearActiveJob()}>Stop tracking</button>
           ) : (
-            <button className="btn btn--primary" onClick={() => setActiveJob(job.id)}>
+            <button className="btn btn-primary" onClick={() => setActiveJob(job.id)}>
               Track on Workbench
             </button>
           )}
@@ -237,7 +242,7 @@ function JobDetail({ id }) {
               <option key={s} value={s}>{STATUS_LABEL[s]}</option>
             ))}
           </select>
-          <button className="btn btn--danger" onClick={handleDelete}>Delete</button>
+          <button className="btn btn-danger" onClick={handleDelete}>Delete</button>
         </div>
       </header>
 
@@ -326,10 +331,10 @@ function Field({ label, value, onSave, placeholder, multiline, rows = 3 }) {
         />
       )}
       <div className="form__actions">
-        <button className="btn btn--primary" onClick={() => { onSave(draft); setEditing(false) }}>
+        <button className="btn btn-primary" onClick={() => { onSave(draft); setEditing(false) }}>
           Save
         </button>
-        <button className="btn" onClick={() => setEditing(false)}>Cancel</button>
+        <button className="btn btn-secondary" onClick={() => setEditing(false)}>Cancel</button>
       </div>
     </div>
   )
@@ -364,7 +369,7 @@ function PhotosSection({ job }) {
     <div className="card">
       <div className="card__head">
         <span className="card__title">Photos ({job.photos.length})</span>
-        <button className="btn btn--sm" onClick={pickFile}>Add photo</button>
+        <button className="btn btn-secondary btn-sm" onClick={pickFile}>Add photo</button>
         <input
           ref={fileRef}
           type="file"
@@ -406,7 +411,7 @@ function TimelineSection({ job }) {
     <div className="card">
       <div className="card__head">
         <span className="card__title">Timeline ({job.timeline.length})</span>
-        <span className="card__hint">eventBus → active job</span>
+        <span className="card__hint">Captured while tracking</span>
       </div>
       {job.timeline.length === 0 ? (
         <div className="empty empty--sm">

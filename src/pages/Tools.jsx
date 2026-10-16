@@ -27,7 +27,7 @@ export default function Tools() {
       <header className="page__head">
         <div>
           <h1 className="page__title">Tools</h1>
-          <p className="page__sub">Bench calculators. SI-formatted. Pure functions — easy to unit-test.</p>
+          <p className="page__sub">Ohm’s law, dividers, LED resistors, colour codes and RC filters.</p>
         </div>
       </header>
 
