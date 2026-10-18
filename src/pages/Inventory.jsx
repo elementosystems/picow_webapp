@@ -33,10 +33,10 @@ export default function Inventory() {
       <header className="page__head">
         <div>
           <h1 className="page__title">Inventory</h1>
-          <p className="page__sub">Bench parts. Mark a low-at threshold and the chip up top will warn you.</p>
+          <p className="page__sub">Parts on the bench. Anything at or below its low-at level is flagged on the rail.</p>
         </div>
         <div className="page__actions">
-          <button className="btn btn--primary" onClick={() => { setCreating((v) => !v); setEditingId(null) }}>
+          <button className="btn btn-primary" onClick={() => { setCreating((v) => !v); setEditingId(null) }}>
             {creating ? 'Cancel' : 'Add part'}
           </button>
         </div>
@@ -98,21 +98,21 @@ export default function Inventory() {
                   <td className="inv__num">
                     <div className="inv__qty">
                       <button
-                        className="btn btn--sm"
+                        className="btn btn-secondary btn-sm"
                         onClick={() => adjustQty(p.id, -1)}
                         disabled={p.qty === 0}
                         aria-label="decrement"
                       >−</button>
                       <span className="inv__qty-num">{p.qty}</span>
-                      <button className="btn btn--sm" onClick={() => adjustQty(p.id, +1)} aria-label="increment">+</button>
+                      <button className="btn btn-secondary btn-sm" onClick={() => adjustQty(p.id, +1)} aria-label="increment">+</button>
                     </div>
                   </td>
                   <td className="inv__num">{p.lowAt}</td>
                   <td>{p.location || <span className="t-muted">—</span>}</td>
                   <td className="inv__actions">
-                    <button className="btn btn--sm" onClick={() => setEditingId(p.id)}>Edit</button>
+                    <button className="btn btn-secondary btn-sm" onClick={() => setEditingId(p.id)}>Edit</button>
                     <button
-                      className="btn btn--sm btn--danger"
+                      className="btn btn-sm btn-danger"
                       onClick={() => { if (confirm('Delete "' + p.name + '"?')) deletePart(p.id) }}
                     >Delete</button>
                   </td>
@@ -161,8 +161,8 @@ function PartForm({ initial, onSave, onCancel, submitLabel }) {
         <input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} />
       </label>
       <div className="form__actions form-grid__actions">
-        <button type="submit" className="btn btn--primary">{submitLabel}</button>
-        <button type="button" className="btn" onClick={onCancel}>Cancel</button>
+        <button type="submit" className="btn btn-primary">{submitLabel}</button>
+        <button type="button" className="btn btn-secondary" onClick={onCancel}>Cancel</button>
       </div>
     </form>
   )
