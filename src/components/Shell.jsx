@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Icon } from './Icons'
 
 // Bode-style title bar: brand mark, breadcrumb, connection pill, clock.
-export function TitleBar({ crumb, connState, connLabel, onConnClick }) {
+export function TitleBar({ crumb, connState, connLabel, onConnClick, children }) {
   const [now, setNow] = useState(() => new Date())
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000)
@@ -18,11 +18,13 @@ export function TitleBar({ crumb, connState, connLabel, onConnClick }) {
       <span className="tb-sep" aria-hidden="true" />
       <span className="tb-crumb">{crumb}</span>
       <span className="tb-spacer" />
+      {children}
       <button
         type="button"
         className="tb-conn"
         data-state={connState}
         onClick={onConnClick}
+        aria-label={connLabel}
         title={connState === 'connected' ? 'Click to disconnect' : 'Click to connect'}
       >
         <span className="dot" />
@@ -33,24 +35,30 @@ export function TitleBar({ crumb, connState, connLabel, onConnClick }) {
   )
 }
 
-// Vertical icon rail with active state and tooltip labels.
+// Vertical icon rail with active state and tooltip labels. Items are links
+// so routes stay bookmarkable and cmd/ctrl-click opens a new tab.
 export function Rail({ items, active, onSelect }) {
+  function handleClick(e, id) {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+    e.preventDefault()
+    onSelect(id)
+  }
   return (
     <nav className="bode-rail" aria-label="Primary navigation">
       {items.map((n) => (
-        <button
+        <a
           key={n.id}
-          type="button"
+          href={n.href}
           className="rail-btn"
           data-active={active === n.id}
-          onClick={() => onSelect(n.id)}
-          aria-label={n.label}
+          onClick={(e) => handleClick(e, n.id)}
+          aria-label={n.badge != null ? `${n.label} (${n.badgeLabel || n.badge})` : n.label}
           aria-current={active === n.id ? 'page' : undefined}
         >
           <Icon name={n.icon} size={19} />
-          {n.badge != null && <span className="badge">{n.badge}</span>}
+          {n.badge != null && <span className={'badge' + (n.badgeTone ? ' badge--' + n.badgeTone : '')}>{n.badge}</span>}
           <span className="label">{n.label}</span>
-        </button>
+        </a>
       ))}
       <span className="rail-spacer" />
     </nav>

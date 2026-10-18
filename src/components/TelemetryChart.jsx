@@ -48,7 +48,7 @@ function withAlpha(color, alpha) {
 /**
  * series:     [{ label, color, unit, precision }]
  * data:       [xs, ys1, ys2, ...]   (xs in unix seconds)
- * height:     chart pixel height
+ * height:     chart pixel height, or 'fill' to track the host element's height
  * dualAxis:   if true, each series gets its own y scale (`y0`, `y1`, ...)
  * thresholds: optional [{ scale, value, color }] — dashed horizontal lines at
  *             the given y on the given scale. Single-axis: scale="y". Dual-axis:
@@ -56,6 +56,12 @@ function withAlpha(color, alpha) {
  * markers:    optional [{ ts (unix s), label?, color? }] — vertical dashed lines
  *             drawn on the canvas via the uPlot draw hook.
  */
+function fmtClock(ts, withTenths) {
+  const d = new Date(ts * 1000)
+  const hms = d.toLocaleTimeString([], { hour12: false })
+  return withTenths ? `${hms}.${Math.floor(d.getMilliseconds() / 100)}` : hms
+}
+
 export default function TelemetryChart({ series, data, height = 220, dualAxis = false, thresholds = [], markers = [] }) {
   const containerRef = useRef(null)
   const plotRef = useRef(null)
@@ -70,6 +76,26 @@ export default function TelemetryChart({ series, data, height = 220, dualAxis = 
   thresholdsRef.current = thresholds
 
   // Build options
+  const fill = height === 'fill'
+
+  // In fill mode the host is sized by its parent (flex/grid track), so read the
+  // height back from it; the uPlot canvas is taken out of flow by .uplot-host--fill.
+  function hostHeight() {
+    if (!fill) return height
+    const el = containerRef.current
+    if (!el) return 160
+    const cs = getComputedStyle(el)
+    const h = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)
+    return Math.max(80, Math.floor(h))
+  }
+
+  // clientWidth includes the host's padding; uPlot needs the content box.
+  function hostWidth() {
+    const el = containerRef.current
+    const cs = getComputedStyle(el)
+    return Math.floor(el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight))
+  }
+
   function buildOptions(width) {
     const t = themeTokens()
     const axisCommon = {
@@ -80,7 +106,7 @@ export default function TelemetryChart({ series, data, height = 220, dualAxis = 
     }
     const cfg = {
       width,
-      height,
+      height: hostHeight(),
       padding: [12, 8, 6, 8],
       legend: { show: false },
       cursor: {
@@ -103,7 +129,17 @@ export default function TelemetryChart({ series, data, height = 220, dualAxis = 
         })),
       ],
       axes: [
-        { ...axisCommon },
+        {
+          ...axisCommon,
+          space: 90,
+          size: 30,
+          // One line of wall-clock time instead of uPlot's two-row date labels;
+          // tenths appear only when ticks are closer than a second apart.
+          values: (_, ticks) => {
+            const sub = ticks.length > 1 && ticks[1] - ticks[0] < 1
+            return ticks.map(ts => fmtClock(ts, sub))
+          },
+        },
         ...(dualAxis
           ? series.map((s, i) => ({
               ...axisCommon,
@@ -237,7 +273,7 @@ export default function TelemetryChart({ series, data, height = 220, dualAxis = 
     if (!containerRef.current) return
     if (plotRef.current) return
     if (!data || !data[0] || data[0].length === 0) return
-    const width = containerRef.current.clientWidth
+    const width = hostWidth()
     const cfg = buildOptions(width)
     plotRef.current = new uPlot(cfg, data, containerRef.current)
     return () => {
@@ -277,7 +313,7 @@ export default function TelemetryChart({ series, data, height = 220, dualAxis = 
     const ro = new ResizeObserver(entries => {
       for (const entry of entries) {
         const w = Math.floor(entry.contentRect.width)
-        if (plotRef.current && w > 0) plotRef.current.setSize({ width: w, height })
+        if (plotRef.current && w > 0) plotRef.current.setSize({ width: w, height: hostHeight() })
       }
     })
     ro.observe(el)
@@ -288,7 +324,7 @@ export default function TelemetryChart({ series, data, height = 220, dualAxis = 
   useEffect(() => {
     const obs = new MutationObserver(() => {
       if (!plotRef.current || !containerRef.current) return
-      const width = containerRef.current.clientWidth
+      const width = hostWidth()
       // Recreate plot with fresh theme tokens (cheaper than mutating opts deeply)
       const oldData = plotRef.current.data
       plotRef.current.destroy()
@@ -299,5 +335,5 @@ export default function TelemetryChart({ series, data, height = 220, dualAxis = 
     return () => obs.disconnect()
   }, [])
 
-  return <div ref={containerRef} className="uplot-host" />
+  return <div ref={containerRef} className={'uplot-host' + (fill ? ' uplot-host--fill' : '')} />
 }

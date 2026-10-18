@@ -411,12 +411,12 @@ export default function Charts({ connected }) {
           </div>
         )}
         {active && viewMode === 'split' && (
-          <div style={{ display: 'grid', gridTemplateRows: '1fr 1fr', gap: 0, flex: 1, minHeight: 0 }}>
+          <div style={{ display: 'grid', gridTemplateRows: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 0, flex: 1, minHeight: 0 }}>
             <TelemetryChart
               key={`split-current-${windowSec}`}
               series={currentSeries}
               data={splitData(view.cur)}
-              height={160}
+              height="fill"
               thresholds={currentChartThresholds}
               markers={visibleMarkers}
             />
@@ -424,7 +424,7 @@ export default function Charts({ connected }) {
               key={`split-voltage-${windowSec}`}
               series={voltageSeries}
               data={splitData(view.vol)}
-              height={160}
+              height="fill"
               thresholds={voltageChartThresholds}
               markers={visibleMarkers}
             />
@@ -435,7 +435,7 @@ export default function Charts({ connected }) {
             key={`combined-${windowSec}`}
             series={combinedSeries}
             data={combinedData}
-            height={320}
+            height="fill"
             dualAxis
             thresholds={combinedChartThresholds}
             markers={visibleMarkers}
